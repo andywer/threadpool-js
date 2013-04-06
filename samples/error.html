@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Error handling</title>
+        <script type="text/javascript" src="threadpool.js"></script>
+    </head>
+    <body>
+        <p id="error"></p>
+        <script type="text/javascript">
+            var workerFunction = function (param, done) {
+                // divide by undeclared variable `y`:
+                var x = param / y;
+            };
+            
+            var tp = new ThreadPool();
+            tp.run(workerFunction, 10)
+            .done(function(result) {
+                document.getElementById('error').innerText = "No error.";
+            })
+            .error(function(errorEvent) {
+                document.getElementById('error').innerHTML = "Worker error: "+errorEvent.message;
+            });
+        </script>
+    </body>
+</html>
