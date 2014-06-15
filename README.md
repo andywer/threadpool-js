@@ -28,12 +28,6 @@ function mythread (param, done) {
 }
 ```
 
-## Documentation
+## License
 
-In progress... For the meantime just have a look at the inline documentation.
-
-
-## Current status
-
-The library is still in an early development stage so stay tuned for new exciting features!
-
+This library is published under the MIT license. See [LICENSE.txt](https://raw.githubusercontent.com/andywer/threadpool-js/master/LICENSE.txt) for details.
