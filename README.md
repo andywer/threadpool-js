@@ -30,4 +30,5 @@ function mythread (param, done) {
 
 ## License
 
-This library is published under the MIT license. See [LICENSE.txt](https://raw.githubusercontent.com/andywer/threadpool-js/master/LICENSE.txt) for details.
+This library is published under the MIT license. See [LICENSE](https://raw.githubusercontent.com/andywer/threadpool-js/master/LICENSE) for details.
+
