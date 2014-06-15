@@ -1,0 +1,22 @@
+{
+  "name": "threadpool-js",
+  "version": "0.1.0",
+  "keywords": ["threadpool", "web worker"],
+  "description": "General-purpose multi-threading library for javascript.",
+  "author": "Andy Wermke <andy@dev.next-step-software.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/andywer/threadpool-js/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andywer/threadpool-js.git"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-cli": "~0.1.13",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-uglify": "~0.5.0",
+    "grunt-contrib-watch": "~0.5.3"
+  }
+}
