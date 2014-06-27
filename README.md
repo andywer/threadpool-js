@@ -22,6 +22,9 @@ pool.run(mythread, " World")
     document.write("Thread #2: " + result);
   });
 
+// Hint: Keep in mind that you are free to use the done() and error() handlers
+//       on single jobs and the whole pool!
+
 // Thread logic
 function mythread (param, done) {
   done( param.toUpperCase() );
