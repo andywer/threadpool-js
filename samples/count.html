@@ -2,19 +2,23 @@
 <html>
     <head>
         <title>Asynchronous counting</title>
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
         <script type="text/javascript" src="../threadpool.js"></script>
     </head>
     <body>
         <p id="output"></p>
+
         <script type="text/javascript">
             var workerFunction = function (param, done) {
-                done("<p>No: "+param+"</p>");
+                done("No: " + param);
             };
 
             var tp = new ThreadPool();
-            for(var no=1; no<20; no++) {
-                tp.run(workerFunction, no, function(result) {
-                    document.getElementById('output').innerHTML += result;
+            for(var no = 1; no < 20; no++) {
+                tp.run(workerFunction, no, function (text) {
+                    $('#output').append(
+                        $('<p></p>').text(text)
+                    );
                 });
             }
         </script>

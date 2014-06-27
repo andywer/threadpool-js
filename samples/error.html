@@ -2,23 +2,26 @@
 <html>
     <head>
         <title>Error handling</title>
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
         <script type="text/javascript" src="../threadpool.js"></script>
     </head>
     <body>
         <p id="error"></p>
+
         <script type="text/javascript">
             var workerFunction = function (param, done) {
                 // divide by undeclared variable `y`:
                 var x = param / y;
             };
 
-            var tp = new ThreadPool();
-            tp.run(workerFunction, 10)
-            .done(function(result) {
-                document.getElementById('error').innerText = "No error.";
+            var pool = new ThreadPool();
+
+            pool.run(workerFunction, 10)
+            .done(function (result) {
+                $('#error').text("No error.");
             })
-            .error(function(errorEvent) {
-                document.getElementById('error').innerHTML = "Worker error: "+errorEvent.message;
+            .error(function (errorEvent) {
+                $('#error').html("Worker encountered a problem: <b>" + errorEvent.message + "</b>");
             });
         </script>
     </body>

@@ -9,17 +9,17 @@ Include the library at first. Just add the *threadpool.js* file to your project 
 Alternatively you may use *[require.js](http://requirejs.org/)*.
 
 ```javascript
-// Init new threadpool
-var tp = new ThreadPool();
+// Init new threadpool with default size
+var pool = new ThreadPool();
 
 // Spawn two threads
-tp.run(mythread, "Hello")
+pool.run(mythread, "Hello")
   .done(function(result) {
-    document.write("Thread #1: "+result);
+    document.write("Thread #1: " + result);
   });
-tp.run(mythread, " World")
+pool.run(mythread, " World")
   .done(function(result) {
-    document.write("Thread #2: "+result);
+    document.write("Thread #2: " + result);
   });
 
 // Thread logic
@@ -31,4 +31,3 @@ function mythread (param, done) {
 ## License
 
 This library is published under the MIT license. See [LICENSE](https://raw.githubusercontent.com/andywer/threadpool-js/master/LICENSE) for details.
-
