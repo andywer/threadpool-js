@@ -8,7 +8,7 @@ module.exports = function (grunt) {
 
   grunt.initConfig({
     jshint: {
-      plugin: ['lib/threadpool.js'],
+      plugin: ['threadpool.js'],
       grunt: {
         options: {
           node: true
@@ -21,13 +21,13 @@ module.exports = function (grunt) {
     uglify: {
       js: {
         files: {
-          'lib/threadpool.min.js': ['lib/threadpool.js']
+          'threadpool.min.js': ['threadpool.js']
         }
       }
     },
     watch: {
       js: {
-        files: ['lib/*.js'],
+        files: ['threadpool.js'],
         tasks: ['uglify']
       }
     }
