@@ -27,6 +27,7 @@
   },
   "scripts": {
     "grunt": "./node_modules/.bin/grunt",
+    "ghpages": "./node_modules/.bin/grunt deploy",
     "precommit": "npm run grunt && sleep 1s && git add *.min.js"
   }
 }
