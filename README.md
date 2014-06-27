@@ -1,4 +1,4 @@
-## threadpool.js
+## threadpool.js [![Bower version](https://badge.fury.io/bo/threadpool-js.svg)](http://badge.fury.io/bo/threadpool-js)
 
 _threadpool.js_ is aimed to be a general-purpose multi-threading library for Javascript.
 It's key features are *portability* and *ease of use*. The library can either be used in a stand-alone fashion or as a *[require.js](http://requirejs.org/)* module.
