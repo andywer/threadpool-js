@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asynchronous counting</title>
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script type="text/javascript" src="../threadpool.js"></script>
+    </head>
+    <body>
+        <p id="output"></p>
+
+        <script type="text/javascript">
+            var workerFunction = function (param, done) {
+                done("No: " + param);
+            };
+
+            var pool = new ThreadPool();
+
+            for(var no = 1; no < 20; no++) {
+                pool.run(workerFunction, no, function (text) {
+                    $('#output').append(
+                        $('<p></p>').text(text)
+                    );
+                });
+            }
+        </script>
+    </body>
+</html>
