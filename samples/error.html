@@ -2,7 +2,7 @@
 <html>
     <head>
         <title>Error handling</title>
-        <script type="text/javascript" src="threadpool.js"></script>
+        <script type="text/javascript" src="../threadpool.js"></script>
     </head>
     <body>
         <p id="error"></p>
@@ -11,7 +11,7 @@
                 // divide by undeclared variable `y`:
                 var x = param / y;
             };
-            
+
             var tp = new ThreadPool();
             tp.run(workerFunction, 10)
             .done(function(result) {

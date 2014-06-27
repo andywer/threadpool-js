@@ -2,7 +2,7 @@
 <html>
     <head>
         <title>Asynchronous counting</title>
-        <script type="text/javascript" src="threadpool.js"></script>
+        <script type="text/javascript" src="../threadpool.js"></script>
     </head>
     <body>
         <p id="output"></p>
@@ -10,7 +10,7 @@
             var workerFunction = function (param, done) {
                 done("<p>No: "+param+"</p>");
             };
-            
+
             var tp = new ThreadPool();
             for(var no=1; no<20; no++) {
                 tp.run(workerFunction, no, function(result) {
