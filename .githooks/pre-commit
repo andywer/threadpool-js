@@ -1,5 +1,0 @@
-#!/bin/sh
-cd `dirname "$0"`/../..
-./node_modules/.bin/grunt
-sleep 1s
-
