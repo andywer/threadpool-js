@@ -4,9 +4,53 @@
         <title>Error handling</title>
         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
         <script type="text/javascript" src="../threadpool.min.js"></script>
+        <style type="text/css">
+          body {
+            font: 12pt Arial, sans-serif;
+            margin: 4% 6%;
+          }
+
+          #error > .title {
+            display: block;
+          }
+
+          #error > .error {
+            display: block;
+            color: red;
+          }
+
+          #source-title {
+            margin-top: 40px;
+          }
+
+          #source {
+            padding: 6px 10px;
+            background: #f0f0f0;
+          }
+        </style>
     </head>
     <body>
         <p id="error"></p>
+
+        <p id="source-title">Code:</p>
+        <pre id="source">
+var workerFunction = function (param, done) {
+    // divide by undeclared variable `y`:
+    var x = param / y;
+};
+
+var pool = new ThreadPool();
+
+pool.run(workerFunction, 10)
+.done(function (result) {
+    $('#error').text("No error.");
+})
+.error(function (errorEvent) {
+    $('#error').append(
+        $('<span class="title"></span>').text("Worker encountered a problem:"),
+        $('<span class="error"></span>').text(errorEvent.message)
+    )
+});</pre>
 
         <script type="text/javascript">
             var workerFunction = function (param, done) {
@@ -21,7 +65,10 @@
                 $('#error').text("No error.");
             })
             .error(function (errorEvent) {
-                $('#error').html("Worker encountered a problem: <b>" + errorEvent.message + "</b>");
+                $('#error').append(
+                    $('<span class="title"></span>').text("Worker encountered a problem:"),
+                    $('<span class="error"></span>').text(errorEvent.message)
+                )
             });
         </script>
     </body>
