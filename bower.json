@@ -1,0 +1,5 @@
+{
+  "name": "threadpool-js",
+  "version": "0.1.1",
+  "main": "threadpool.js"
+}
