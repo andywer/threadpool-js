@@ -2,11 +2,7 @@
 
 module.exports = function (grunt) {
 
-  grunt.loadNpmTasks('grunt-contrib-copy');
-  grunt.loadNpmTasks('grunt-contrib-jshint');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-watch');
-  grunt.loadNpmTasks('grunt-gh-pages');
+  require('load-grunt-tasks')(grunt);
 
   grunt.initConfig({
     jshint: {
@@ -47,7 +43,9 @@ module.exports = function (grunt) {
         base: 'public'
       },
       src: ['**']
-    }
+    },
+
+    clean: ['.grunt/', 'public/']
   });
 
   grunt.registerTask('default', ['jshint', 'uglify']);
