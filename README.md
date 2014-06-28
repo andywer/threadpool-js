@@ -3,6 +3,14 @@
 _threadpool.js_ is aimed to be a general-purpose multi-threading library for Javascript.
 It's key features are *portability* and *ease of use*. The library can either be used in a stand-alone fashion or as a *[require.js](http://requirejs.org/)* module.
 
+## Usage
+
+You can add threadpool-js to your project using bower or just by adding this script tag:
+
+```html
+<script type="text/javascript" src="http://andywer.github.io/threadpool-js/threadpool.min.js"></script>
+```
+
 ## Example use
 
 Include the library at first. Just add the *threadpool.js* file to your project and include it per `<script>` tag.
@@ -30,6 +38,10 @@ function mythread (param, done) {
   done( param.toUpperCase() );
 }
 ```
+
+## Demo
+
+Try the [samples](http://andywer.github.io/threadpool-js/samples/index.html).
 
 ## License
 
