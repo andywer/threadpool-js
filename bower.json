@@ -1,5 +1,11 @@
 {
   "name": "threadpool-js",
   "version": "0.1.1",
-  "main": "threadpool.js"
+  "main": "threadpool.js",
+  "homepage": "https://github.com/andywer/threadpool-js",
+  "authors": [
+    "Andy Wermke <andy@dev.next-step-software.com>"
+  ],
+  "description": "Basic Javascript thread pool implementation using web workers. For use with or without require.js",
+  "license": "MIT"
 }
