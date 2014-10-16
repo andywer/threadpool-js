@@ -25,10 +25,10 @@ if (typeof Worker != "function" && console) {
         '        postMessage(result);'+
         '    });'+
         '}';
-    
+
     var genericWorkerDataUri = "data:text/javascript;charset=utf-8,"+encodeURI(genericWorkerCode);
     var createBlobURL = window.createBlobURL || window.createObjectURL;
-    
+
     if (!createBlobURL && window.webkitURL) {
         createBlobURL = window.webkitURL.createObjectURL;
     }
@@ -145,6 +145,13 @@ if (typeof Worker != "function" && console) {
     };
     
     Thread.prototype = {
+        terminate : function() {
+            if(this.worker) {
+                this.worker.terminate();
+                this.worker = undefined;
+            }
+        },
+
         run : function (job) {
             var _this = this,
                 needToInitWorker = true;
@@ -209,6 +216,7 @@ if (typeof Worker != "function" && console) {
         this.size = size;
         this.pendingJobs = [];
         this.idleThreads = [];
+        this.activeThreads = [];
         
         this.callbacksDone = [];
         this.callbacksError = [];
@@ -219,6 +227,18 @@ if (typeof Worker != "function" && console) {
     };
     
     ThreadPool.prototype = {
+        terminateAll : function() {
+            for(i = 0; i < this.idleThreads.length; i++) {
+                this.idleThreads[i].terminate();
+            }
+
+            for(i = 0; i < this.activeThreads.length; i++) {
+                if(this.activeThreads[i]) {
+                    this.activeThreads[i].terminate();
+                }
+            }
+        },
+
         /**
          *  Usage: run (String:WorkerScript [, Object/Scalar:Parameter] [, Function:doneCallback(returnValue)])
          *         - or -
@@ -289,6 +309,7 @@ if (typeof Worker != "function" && console) {
         runJobs : function () {
             if (this.idleThreads.length > 0 && this.pendingJobs.length > 0) {
                 var thread = this.idleThreads.shift();
+                this.activeThreads.push(thread);
                 var job = this.pendingJobs.shift();
                 thread.run(job);
             }
@@ -296,6 +317,7 @@ if (typeof Worker != "function" && console) {
         
         _threadDone : function (thread) {
             this.idleThreads.push(thread);
+            delete this.activeThreads[this.activeThreads.indexOf(thread)];
             this.runJobs();
         },
         
@@ -306,6 +328,9 @@ if (typeof Worker != "function" && console) {
             _callListeners(this.callbacksError, [error]);
         },
         
+        clearDone : function() {
+            this.callbacksDone = [];
+        },
         
         /// @see Job.done()
         done : function(callback) {
@@ -363,4 +388,5 @@ if (typeof Worker != "function" && console) {
         window.ThreadPool = ThreadPool;
     }
 })();
+
 
