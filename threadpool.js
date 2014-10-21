@@ -175,7 +175,21 @@ if (typeof Worker != "function" && console) {
                 this.worker.postMessage(job.getParameter());
             } else {
                 if (needToInitWorker) {
-                    this.worker = new Worker(genericWorkerDataUri);
+			try {
+                    		this.worker = new Worker(genericWorkerDataUri);
+			}
+			catch(err) {
+				// make sure it's IE that we failed on
+				var older_ies = window.navigator.userAgent.indexOf('MSIE ');
+				var newer_ies = window.navigator.userAgent.indexOf('Trident/');
+
+				// Try to create the worker using evalWorker.js as the bloburl bug workaround
+				if(older_ies > -1 || newer_ies > -1) {
+					this.worker = new Worker(this.threadPool.evalWorkerUrl);
+					this.worker.postMessage(genericWorkerCode);
+				}
+
+			}
                     this.worker.addEventListener('message', success, false);
                     this.worker.addEventListener('error', error, false);
                 }
@@ -210,10 +224,12 @@ if (typeof Worker != "function" && console) {
     /**
      *  @param {size}   Optional. Number of threads. Default is `ThreadPool.defaultSize`.
      */
-    var ThreadPool = function (size) {
+    var ThreadPool = function (size, eval_script) {
         size = size || ThreadPool.defaultSize;
-        
+	eval_script = eval_script || '';        
+
         this.size = size;
+	this.evalWorkerUrl = eval_script;
         this.pendingJobs = [];
         this.idleThreads = [];
         this.activeThreads = [];
