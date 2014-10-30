@@ -180,23 +180,23 @@ if (typeof Worker != "function" && console) {
                 if (needToInitWorker) {
                     try {
                         this.worker = new Worker(genericWorkerDataUri);
-  			            } catch(err) {
-                				// make sure it's IE that we failed on
-                				var olderIE = window.navigator.userAgent.indexOf('MSIE ') > -1;
-                				var newerIE = window.navigator.userAgent.indexOf('Trident/') > -1;
+                    } catch(err) {
+                        // make sure it's IE that we failed on
+                        var olderIE = window.navigator.userAgent.indexOf('MSIE ') > -1;
+                        var newerIE = window.navigator.userAgent.indexOf('Trident/') > -1;
 
-                				// Try to create the worker using evalWorker.js as the bloburl bug workaround
-                				if (olderIE || newerIE) {
+                        // Try to create the worker using evalWorker.js as the bloburl bug workaround
+                        if (olderIE || newerIE) {
                             if (!this.threadPool.evalWorkerUrl) {
                                 throw new Error('No eval worker script set (required for IE compatibility).');
                             }
 
-                  					this.worker = new Worker(this.threadPool.evalWorkerUrl);
-                  					this.worker.postMessage(genericWorkerCode);
-                				} else {
+                            this.worker = new Worker(this.threadPool.evalWorkerUrl);
+                            this.worker.postMessage(genericWorkerCode);
+                        } else {
                             throw err;
                         }
-              			}
+                    }
                     this.worker.addEventListener('message', success, false);
                     this.worker.addEventListener('error', error, false);
                 }

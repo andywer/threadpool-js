@@ -20,7 +20,7 @@ module.exports = function (grunt) {
       js: {
         files: {
           'threadpool.min.js': ['threadpool.js'],
-	  'evalWorker.min.js': ['evalWorker.js']
+          'evalWorker.min.js': ['evalWorker.js']
         }
       }
     },
