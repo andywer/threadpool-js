@@ -19,7 +19,8 @@ module.exports = function (grunt) {
     uglify: {
       js: {
         files: {
-          'threadpool.min.js': ['threadpool.js']
+          'threadpool.min.js': ['threadpool.js'],
+	  'evalWorker.min.js': ['evalWorker.js']
         }
       }
     },

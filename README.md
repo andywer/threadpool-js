@@ -43,7 +43,8 @@ function mythread (param, done) {
 
 Try the [samples](http://andywer.github.io/threadpool-js/samples/index.html).
 
-(Use Chrome, Firefox or Opera)
+(Use Chrome, Firefox, IE, or Opera)
+Note: IE support experimental
 
 ## License
 
