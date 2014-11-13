@@ -44,8 +44,8 @@ if (typeof Worker != "function" && console) {
 
 
     /**
-     *  @param {script} Script filename or function.
-     *  @param {param} Optional. Parameter (or array of parameters) to be passed to the thread or false/undefined.
+     *  @param {string} script Script filename or function.
+     *  @param {object|array} [param] Optional. Parameter (or array of parameters) to be passed to the thread or false/undefined.
      */
     var Job = function (script, param) {
         this.param = param;
@@ -81,7 +81,7 @@ if (typeof Worker != "function" && console) {
         },
 
         /**
-         *  @return Object: { args: ["argument name", ...], body: "<code>" }
+         *  @return {object} Object: { args: ["argument name", ...], body: "<code>" }
          *          Usage:  var f = Function.apply(null, args.concat(body));
          *                  (`Function.apply()` replaces `new Function()`)
          */
@@ -117,7 +117,7 @@ if (typeof Worker != "function" && console) {
 
         /**
          *  Adds a callback function that is called when the job has been (successfully) finished.
-         *  @param {callback}
+         *  @param {function} callback
          *      function(result). `result` is the result value/object returned by the thread.
          */
         done : function (callback) {
@@ -127,7 +127,7 @@ if (typeof Worker != "function" && console) {
 
         /**
          *  Adds a callback function that is called if the job fails.
-         *  @param {callback}
+         *  @param {function} callback
          *      function(error). `error` is an instance of `Error`.
          */
         error : function (callback) {
@@ -230,8 +230,8 @@ if (typeof Worker != "function" && console) {
 
 
     /**
-     *  @param {size}           Optional. Number of threads. Default is `ThreadPool.defaultSize`.
-     *  @param {evalScriptUrl}  Optional. URL to `evalWorker[.min].js` script (for IE compatibility).
+     *  @param {int} [size]             Optional. Number of threads. Default is `ThreadPool.defaultSize`.
+     *  @param {string} [evalScriptUrl] Optional. URL to `evalWorker[.min].js` script (for IE compatibility).
      */
     var ThreadPool = function (size, evalScriptUrl) {
         size = size || ThreadPool.defaultSize;
@@ -253,7 +253,7 @@ if (typeof Worker != "function" && console) {
 
     ThreadPool.prototype = {
         terminateAll : function() {
-            for(i = 0; i < this.idleThreads.length; i++) {
+            for(var i = 0; i < this.idleThreads.length; i++) {
                 this.idleThreads[i].terminate();
             }
 
@@ -277,7 +277,7 @@ if (typeof Worker != "function" && console) {
             var workerScript, workerFunction, importScripts, parameter, doneCb;
 
             if (arguments.length < 1) {
-                throw new Error("run(): Too less parameters.");
+                throw new Error("run(): Too few parameters.");
             }
 
             if (typeof args[0] == "string") {
@@ -383,7 +383,7 @@ if (typeof Worker != "function" && console) {
         }
 
         // Check that this callbacks has not yet been registered:
-        for (var i=0; i<callbacksArray.length; i++) {
+        for (var i = 0; i<callbacksArray.length; i++) {
             var cb = callbacksArray[i];
             if (cb == callback) {
                 return;
@@ -393,7 +393,7 @@ if (typeof Worker != "function" && console) {
     }
 
     function _callListeners (callbacksArray, params) {
-        for (var i=0; i<callbacksArray.length; i++) {
+        for (var i = 0; i<callbacksArray.length; i++) {
             var cb = callbacksArray[i];
             cb.apply(null, params);
         }
