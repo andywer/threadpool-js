@@ -39,9 +39,9 @@ function mythread (param, done) {
 }
 ```
 
-## Support for transferables
+## Support for transferable objects
 
-If you want to pass large byte blobs to your workers efficiently, you may use a feature called [transferables](https://developer.mozilla.org/en/docs/Web/Guide/Performance/Using_web_workers#Passing_data_by_transferring_ownership_(transferable_objects)).
+If you want to pass large blobs to your workers efficiently, you may use a feature called [transferable objects](https://developer.mozilla.org/en/docs/Web/Guide/Performance/Using_web_workers#Passing_data_by_transferring_ownership_(transferable_objects)).
 
 _threadpool-js_ supports them. Just pass the array of buffers to transfer (after the worker parameter) to the pool's `run` method:
 
