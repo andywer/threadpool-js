@@ -14,16 +14,16 @@ if (typeof Worker != "function" && console) {
 (function() {
 
     var genericWorkerCode =
-        'this.onmessage = function (event) {'+
-        '    var fnData = event.data.function;'+
+        'this.onmessage = function (event) {' +
+        '    var fnData = event.data.function;' +
         '    var scripts = event.data.importScripts;'+
-        '    var fn = Function.apply(null, fnData.args.concat(fnData.body));'+
-        '    if(importScripts && importScripts.length > 0) {'+
-        '        importScripts.apply(null, scripts);'+
-        '    }'+
-        '    fn(event.data.parameter, function(result) {'+
-        '        postMessage(result);'+
-        '    });'+
+        '    var fn = Function.apply(null, fnData.args.concat(fnData.body));' +
+        '    if(importScripts && importScripts.length > 0) {' +
+        '        importScripts.apply(null, scripts);' +
+        '    }' +
+        '    fn(event.data.parameter, function(result) {' +
+        '        postMessage(result);' +
+        '    });' +
         '}';
 
     var genericWorkerDataUri = "data:text/javascript;charset=utf-8,"+encodeURI(genericWorkerCode);
@@ -46,9 +46,11 @@ if (typeof Worker != "function" && console) {
     /**
      *  @param {string} script Script filename or function.
      *  @param {object|array} [param] Optional. Parameter (or array of parameters) to be passed to the thread or false/undefined.
+     *  @param {object[]} [transferBuffers] Optional. Array of buffers to be transferred to the worker context.
      */
-    var Job = function (script, param) {
+    var Job = function (script, param, transferBuffers) {
         this.param = param;
+        this.transferBuffers = transferBuffers;
         this.importScripts = [];
         this.callbacksDone = [];
         this.callbacksError = [];
@@ -69,15 +71,17 @@ if (typeof Worker != "function" && console) {
         getParameter : function () {
             return this.param;
         },
-        setParameter : function (param) {
-            this.param = param;
-        },
 
         getImportScripts : function () {
             return this.importScripts;
         },
+
         setImportScripts : function (scripts) {
             this.importScripts = scripts;
+        },
+
+        getBuffersToTransfer : function () {
+            return this.transferBuffers;
         },
 
         /**
@@ -154,8 +158,14 @@ if (typeof Worker != "function" && console) {
 
         run : function (job) {
             var _this = this,
-                needToInitWorker = true;
+                needToInitWorker = true,
+                transferBuffers = job.getBuffersToTransfer();
+
             this.currentJob = job;
+
+            if (!transferBuffers) {
+                transferBuffers = [];
+            }
 
             if (this.worker) {
                 if (this.lastJob && this.lastJob.functionallyEquals(job)) {
@@ -173,7 +183,7 @@ if (typeof Worker != "function" && console) {
                     this.worker.addEventListener('error', error, false);
                 }
 
-                this.worker.postMessage(job.getParameter());
+                this.worker.postMessage(job.getParameter(), transferBuffers);
 
             } else {
 
@@ -205,7 +215,7 @@ if (typeof Worker != "function" && console) {
                     "function" :      job.getFunction(),
                     "importScripts" : job.getImportScripts(),
                     "parameter" :     job.getParameter()
-                });
+                }, transferBuffers);
             }
 
             function success (event) {
@@ -265,16 +275,16 @@ if (typeof Worker != "function" && console) {
         },
 
         /**
-         *  Usage: run (String:WorkerScript [, Object/Scalar:Parameter] [, Function:doneCallback(returnValue)])
+         *  Usage: run ({string} WorkerScript [, {object|scalar} Parameter[, {object[]} BuffersToTransfer]] [, {function} doneCallback(returnValue)])
          *         - or -
-         *         run ([Array:ImportScripts, ] Function:WorkerFunction(param, doneCB) [, Object/Scalar:Parameter] [, Function:DoneCallback(result)])
+         *         run ([{string[]} ImportScripts, ] {function} WorkerFunction(param, doneCB) [, {object|scalar} Parameter[, {objects[]} BuffersToTransfer]] [, {function} DoneCallback(result)])
          */
         run : function () {
             ////////////////////
             // Parse arguments:
 
             var args = [].slice.call(arguments);    // convert `arguments` to a fully functional array `args`
-            var workerScript, workerFunction, importScripts, parameter, doneCb;
+            var workerScript, workerFunction, importScripts, parameter, transferBuffers, doneCb;
 
             if (arguments.length < 1) {
                 throw new Error("run(): Too few parameters.");
@@ -298,11 +308,14 @@ if (typeof Worker != "function" && console) {
             if (args.length > 0 && typeof args[0] != "function") {
                 parameter = args.shift();
             }
+            if (args.length > 0 && typeof args[0] != "function") {
+                transferBuffers = args.shift();
+            }
             if (args.length > 0 && typeof args[0] == "function") {
                 doneCb = args.shift();
             }
             if (args.length > 0) {
-                throw new Error("run(): Unrecognized parameters: "+args);
+                throw new Error("run(): Unrecognized parameters: " + args);
             }
 
             ///////////////
@@ -310,9 +323,9 @@ if (typeof Worker != "function" && console) {
 
             var job;
             if (workerScript) {
-                job = new Job(workerScript, parameter);
+                job = new Job(workerScript, parameter, transferBuffers);
             } else {
-                job = new Job(workerFunction, parameter);
+                job = new Job(workerFunction, parameter, transferBuffers);
                 if (importScripts && importScripts.length > 0) {
                     job.setImportScripts(importScripts);
                 }
