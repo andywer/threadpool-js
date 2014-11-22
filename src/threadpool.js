@@ -195,7 +195,7 @@ if (typeof Worker != "function" && console) {
                         var olderIE = window.navigator.userAgent.indexOf('MSIE ') > -1;
                         var newerIE = window.navigator.userAgent.indexOf('Trident/') > -1;
 
-                        // Try to create the worker using evalWorker.js as the bloburl bug workaround
+                        // Try to create the worker using evalworker.js as the bloburl bug workaround
                         if (olderIE || newerIE) {
                             if (!this.threadPool.evalWorkerUrl) {
                                 throw new Error('No eval worker script set (required for IE compatibility).');
