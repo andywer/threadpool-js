@@ -6,7 +6,7 @@ module.exports = function (grunt) {
 
   grunt.initConfig({
     jshint: {
-      plugin: ['threadpool.js'],
+      plugin: ['src/threadpool.js'],
       grunt: {
         options: {
           node: true
@@ -19,14 +19,14 @@ module.exports = function (grunt) {
     uglify: {
       js: {
         files: {
-          'threadpool.min.js': ['threadpool.js'],
-          'evalWorker.min.js': ['evalWorker.js']
+          'dist/threadpool.min.js': ['src/threadpool.js'],
+          'dist/evalWorker.min.js': ['src/evalWorker.js']
         }
       }
     },
     watch: {
       js: {
-        files: ['threadpool.js'],
+        files: ['src/*.js'],
         tasks: ['uglify', 'deploy']
       }
     },
@@ -35,7 +35,8 @@ module.exports = function (grunt) {
     copy: {
       public: {
         files: [
-          { expand: true, src: ['threadpool.min.js', 'samples/**'], dest: 'public/' }
+          { expand: true, flatten: true, src: ['dist/*.js'], dest: 'public/' },
+          { expand: true, src: ['samples/**'], dest: 'public/' }
         ]
       }
     },
