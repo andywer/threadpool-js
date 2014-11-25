@@ -7,7 +7,7 @@
  *  @see    https://github.com/andywer/threadpool-js
  */
 
-if (typeof Worker != "function" && console) {
+if ((typeof Worker === 'undefined' || Worker == null) && console) {
     console.log("Warning: Browser does not support web workers.");
 }
 
