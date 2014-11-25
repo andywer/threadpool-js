@@ -7,7 +7,7 @@
  *  @see    https://github.com/andywer/threadpool-js
  */
 
-if (typeof Worker != "function" && console) {
+if ((typeof Worker === 'undefined' || Worker == null) && console) {
     console.log("Warning: Browser does not support web workers.");
 }
 
@@ -354,8 +354,8 @@ if (typeof Worker != "function" && console) {
         },
 
         _threadDone : function (thread) {
-            this.idleThreads.push(thread);
-            delete this.activeThreads[this.activeThreads.indexOf(thread)];
+            this.idleThreads.unshift(thread);
+            this.activeThreads.splice(this.activeThreads.indexOf(thread), 1);
             this.runJobs();
         },
 
@@ -422,6 +422,8 @@ if (typeof Worker != "function" && console) {
     if (typeof define == "function") {
         // require.js:
         define([], ThreadPool);
+    } else if (typeof module === 'object') {
+        module.exports = ThreadPool;
     } else if (typeof window == "object") {
         window.ThreadPool = ThreadPool;
     }
