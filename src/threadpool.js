@@ -422,6 +422,8 @@ if (typeof Worker != "function" && console) {
     if (typeof define == "function") {
         // require.js:
         define([], ThreadPool);
+    } else if (typeof module === 'object') {
+        module.exports = ThreadPool;
     } else if (typeof window == "object") {
         window.ThreadPool = ThreadPool;
     }
