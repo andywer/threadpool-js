@@ -354,8 +354,8 @@ if ((typeof Worker === 'undefined' || Worker == null) && console) {
         },
 
         _threadDone : function (thread) {
-            this.idleThreads.push(thread);
-            delete this.activeThreads[this.activeThreads.indexOf(thread)];
+            this.idleThreads.unshift(thread);
+            this.activeThreads.splice(this.activeThreads.indexOf(thread), 1);
             this.runJobs();
         },
 
