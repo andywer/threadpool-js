@@ -7,7 +7,7 @@
  *  @see    https://github.com/andywer/threadpool-js
  */
 
-if ((typeof Worker === 'undefined' || Worker == null) && console) {
+if ((typeof Worker === 'undefined' || Worker === null) && console) {
     console.log("Warning: Browser does not support web workers.");
 }
 
@@ -26,7 +26,7 @@ if ((typeof Worker === 'undefined' || Worker == null) && console) {
         '    });' +
         '}';
 
-    var genericWorkerDataUri = "data:text/javascript;charset=utf-8,"+encodeURI(genericWorkerCode);
+    var genericWorkerDataUri = "data:text/javascript;charset=utf-8," + encodeURI(genericWorkerCode);
     var createBlobURL = window.createBlobURL || window.createObjectURL;
 
     if (!createBlobURL && window.webkitURL) {

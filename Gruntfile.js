@@ -30,6 +30,13 @@ module.exports = function (grunt) {
         tasks: ['uglify', 'deploy']
       }
     },
+    
+    jasmine_node: {
+      options: {
+        useHelpers: true
+      },
+      all: ['spec/']
+    },
 
     // github pages deployment:
     copy: {
@@ -50,6 +57,7 @@ module.exports = function (grunt) {
     clean: ['.grunt/', 'public/']
   });
 
+  grunt.registerTask('test', ['jasmine_node']);
   grunt.registerTask('default', ['jshint', 'uglify']);
 
   grunt.registerTask('deploy', ['uglify', 'copy:public', 'gh-pages']);
