@@ -7,7 +7,7 @@
  *  @see    https://github.com/andywer/threadpool-js
  */
 
-if ((typeof Worker === 'undefined' || Worker == null) && console) {
+if ((typeof Worker === 'undefined' || Worker === null) && console) {
     console.log("Warning: Browser does not support web workers.");
 }
 
@@ -52,6 +52,7 @@ if ((typeof Worker === 'undefined' || Worker == null) && console) {
         this.param = param;
         this.transferBuffers = transferBuffers;
         this.importScripts = [];
+        this.callbacksStart = [];
         this.callbacksDone = [];
         this.callbacksError = [];
 
@@ -110,14 +111,28 @@ if ((typeof Worker === 'undefined' || Worker == null) && console) {
                    otherJob.body == this.body &&
                    otherJob.scriptFile == this.scriptFile;
         },
+        
+        triggerStart : function() {
+            _callListeners(this.callbacksStart, []);
+        },
 
         triggerDone : function (result) {
             _callListeners(this.callbacksDone, [result]);
         },
+        
         triggerError : function (error) {
             _callListeners(this.callbacksError, [error]);
         },
-
+        
+        /**
+         *  Adds a callback function that is called when the job is about to start.
+         *  @param {function} callback
+         *      function(result). `result` is the result value/object returned by the thread.
+         */
+        start : function(callback) {
+            _addListener(this.callbacksStart, callback);
+            return this;
+        },
 
         /**
          *  Adds a callback function that is called when the job has been (successfully) finished.
@@ -175,6 +190,8 @@ if ((typeof Worker === 'undefined' || Worker == null) && console) {
                     this.worker = undefined;
                 }
             }
+            
+            job.triggerStart();
 
             if (job.getScriptFile()) {
                 if (needToInitWorker) {
@@ -339,7 +356,11 @@ if ((typeof Worker === 'undefined' || Worker == null) && console) {
             // Run job:
 
             this.pendingJobs.push(job);
-            this.runJobs();
+            
+            var self = this;
+            setTimeout(function() {
+                self.runJobs();
+            }, 0);
 
             return job;
         },
