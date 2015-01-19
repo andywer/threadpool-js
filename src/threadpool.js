@@ -29,8 +29,14 @@ if ((typeof Worker === 'undefined' || Worker === null) && console) {
   var genericWorkerDataUri = "data:text/javascript;charset=utf-8," + encodeURI(genericWorkerCode);
   var createBlobURL = window.createBlobURL || window.createObjectURL;
 
-  if (!createBlobURL && window.webkitURL) {
-    createBlobURL = window.webkitURL.createObjectURL;
+  if (!createBlobURL) {
+    var URL = window.URL || window.webkitURL;
+
+    if (URL) {
+      createBlobURL = URL.createObjectURL;
+    } else {
+      throw new Error('No Blob creation implementation found.');
+    }
   }
 
   if (typeof BlobBuilder == "function" && typeof createBlobURL == "function") {
