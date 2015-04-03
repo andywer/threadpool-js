@@ -448,7 +448,7 @@ if ((typeof Worker === 'undefined' || Worker === null) && console) {
 
   if (typeof define == "function") {
     // require.js:
-    define([], ThreadPool);
+    define([], function () { return ThreadPool; });
   } else if (typeof module === 'object') {
     module.exports = ThreadPool;
   } else if (typeof window == "object") {
