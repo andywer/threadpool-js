@@ -16,25 +16,21 @@
     "url": "https://github.com/andywer/threadpool-js.git"
   },
   "devDependencies": {
-    "grunt": "~0.4.1",
-    "grunt-cli": "~0.1.13",
-    "grunt-contrib-clean": "^0.5.0",
-    "grunt-contrib-copy": "^0.5.0",
-    "grunt-contrib-jshint": "~0.10.0",
-    "grunt-contrib-uglify": "~0.5.0",
-    "grunt-contrib-watch": "~0.5.3",
-    "grunt-gh-pages": "^0.9.1",
-    "grunt-jasmine-node": "^0.2.1",
+    "expect.js": "^0.3.1",
+    "gulp": "^3.8.11",
+    "gulp-concat": "^2.5.2",
+    "gulp-gh-pages": "^0.5.1",
+    "gulp-jshint": "^1.10.0",
+    "gulp-mocha": "^2.0.1",
+    "gulp-uglify": "^1.2.0",
     "husky": "^0.6.1",
-    "jasmine-expect": "^1.22.2",
-    "load-grunt-tasks": "^0.6.0",
+    "mocha": "^2.2.4",
     "webworker-threads": "^0.5.3"
   },
   "scripts": {
-    "grunt": "./node_modules/.bin/grunt",
-    "ghpages": "./node_modules/.bin/grunt deploy",
-    "precommit": "npm run grunt && sleep 1s && git add *.min.js",
-    "test": "./node_modules/.bin/grunt test"
+    "gulp": "./node_modules/.bin/gulp",
+    "precommit": "npm run gulp && sleep 1s && git add *.min.js",
+    "test": "./node_modules/.bin/mocha test"
   },
   "main": "src/threadpool.js"
 }

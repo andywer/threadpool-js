@@ -1,97 +1,84 @@
-require('jasmine-expect');
+require('./helpers');
+
+var ThreadPool  = require('../dist/threadpool.min.js');
+var expect      = require('expect.js');
+
 
 describe('threadpool', function() {
 
   it('has been initialized', function() {
-    expect(ThreadPool).toBeFunction();
+    expect(ThreadPool).to.be.a('function');
   });
 
   describe('workers', function() {
 
-    it('are spawned', function() {
+    it('are spawned', function(done) {
       var pool = new ThreadPool()
-        , actionCalled = 0
-        , done = false;
+        , actionCalled = 0;
 
-      var action = function(param, done) {
-        done();
+      var action = function(param, actionDone) {
+        actionDone();
       };
 
-      runs(function() {
-        pool.run(action);
-        pool.run(action);
+      pool.run(action);
+      pool.run(action);
 
-        pool.done(function() {
-          actionCalled++;
-        });
-
-        setTimeout(function() {
-          expect(actionCalled).toEqual(2);
-          done = true;
-        }, 500);
+      pool.done(function() {
+        actionCalled++;
       });
 
-      waitsFor(function() {
-        return done;
-      });
+      setTimeout(function() {
+        expect(actionCalled).to.equal(2);
+        done();
+      }, 500);
     });
 
-    it('trigger start event', function() {
+    it('trigger start event', function(done) {
       var pool = new ThreadPool()
         , startEvents = 0
-        , done = false;
+        , doneCalled = false;
 
-      var action = function(param, done) {
-        done();
+      var action = function(param, actionDone) {
+        actionDone();
       };
 
-      runs(function() {
-        function startEventHandler() {
-          startEvents++;
-        }
+      function startEventHandler() {
+        startEvents++;
+      }
 
-        pool.run(action).start(startEventHandler);
-        pool.run(action).start(startEventHandler);
+      pool.run(action).start(startEventHandler);
+      pool.run(action).start(startEventHandler);
 
-        pool.done(function() {
-          expect(startEvents).toEqual(2);
-          done = true;
-        });
-      });
+      pool.done(function() {
+        expect(startEvents).to.equal(2);
+        if (doneCalled) { return; }
 
-      waitsFor(function() {
-        return done;
+        doneCalled = true;
+        done();
       });
     });
 
-    it('trigger error event', function() {
+    it('trigger error event', function(done) {
       var pool = new ThreadPool()
         , errorEvents = 0
-        , poolError = 0
-        , done = false;
+        , poolError = 0;
 
       var action = function(param, done) {
         throw new Error('Test');
       };
 
-      runs(function() {
-        function errorEventHandler() {
-          errorEvents++;
-        }
+      function errorEventHandler() {
+        errorEvents++;
+      }
 
-        pool.run(action).error(errorEventHandler);
-        pool.run(action).error(errorEventHandler);
+      pool.run(action).error(errorEventHandler);
+      pool.run(action).error(errorEventHandler);
 
-        pool.error(function() {
-          poolError++;
+      pool.error(function() {
+        poolError++;
 
-          expect(errorEvents).toEqual(poolError);
-          if (errorEvents == 2) { done = true; }
-        });
-      });
-
-      waitsFor(function() {
-        return done;
+        expect(errorEvents).to.equal(poolError);
+        if (errorEvents == 2) { done(); }
       });
     });
 

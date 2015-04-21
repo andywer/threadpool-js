@@ -1,5 +1,5 @@
-.grunt
 .idea
+.publish
 bower_components
 node_modules
 public
