@@ -18,7 +18,7 @@ if ((typeof Worker === 'undefined' || Worker === null) && console) {
     '  var fnData = event.data.function;' +
     '  var scripts = event.data.importScripts;'+
     '  var fn = Function.apply(null, fnData.args.concat(fnData.body));' +
-    '  if(importScripts && scripts.length > 0) {' +
+    '  if (importScripts && scripts.length > 0) {' +
     '    importScripts.apply(null, scripts);' +
     '  }' +
     '  fn(event.data.parameter, function(result) {' +
