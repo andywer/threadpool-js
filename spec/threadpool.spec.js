@@ -1,6 +1,7 @@
 require('./helpers');
+require('../dist/threadpool.min.js');
 
-var ThreadPool  = require('../dist/threadpool.min.js');
+var ThreadPool  = window.ThreadPool;
 var expect      = require('expect.js');
 
 

@@ -16,6 +16,7 @@
     "url": "https://github.com/andywer/threadpool-js.git"
   },
   "devDependencies": {
+    "browserify": "^9.0.8",
     "expect.js": "^0.3.1",
     "gulp": "^3.8.11",
     "gulp-concat": "^2.5.2",
@@ -25,6 +26,7 @@
     "gulp-uglify": "^1.2.0",
     "husky": "^0.6.1",
     "mocha": "^2.2.4",
+    "vinyl-source-stream": "^1.1.0",
     "webworker-threads": "^0.5.3"
   },
   "scripts": {
@@ -32,5 +34,5 @@
     "precommit": "npm run gulp && sleep 1s && git add *.min.js",
     "test": "./node_modules/.bin/mocha spec"
   },
-  "main": "src/threadpool.js"
+  "main": "src/ThreadPool.js"
 }
