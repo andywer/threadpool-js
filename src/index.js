@@ -1,3 +1,5 @@
+/*global define*/
+'use strict';
 
 /**
  *  Simple threadpool implementation based on web workers.
@@ -8,19 +10,19 @@
  */
 
 if ((typeof Worker === 'undefined' || Worker === null) && console) {
-  console.log("Warning: Browser does not support web workers.");
+  console.log('Warning: Browser does not support web workers.');
 }
 
 
 var ThreadPool = require('./ThreadPool');
 
-if (typeof define == "function") {
+if (typeof define === 'function') {
   // require.js:
   define([], function () { return ThreadPool; });
 } else if (typeof module === 'object') {
   module.exports = ThreadPool;
 }
 
-if (typeof window == "object") {
+if (typeof window === 'object') {
   window.ThreadPool = ThreadPool;
 }

@@ -1,3 +1,4 @@
+'use strict';
 
 var Job = require('./Job');
 var Thread = require('./Thread');
@@ -28,7 +29,7 @@ var ThreadPool = function (size, evalScriptUrl) {
 };
 
 ThreadPool.prototype = {
-  terminateAll : function() {
+  terminateAll: function() {
     for(var i = 0; i < this.idleThreads.length; i++) {
       this.idleThreads[i].terminate();
     }
@@ -45,7 +46,7 @@ ThreadPool.prototype = {
    *         - or -
    *         run ([{string[]} ImportScripts, ] {function} WorkerFunction(param, doneCB) [, {object|scalar} Parameter[, {objects[]} BuffersToTransfer]] [, {function} DoneCallback(result)])
    */
-  run : function () {
+  run: function () {
     ////////////////////
     // Parse arguments:
 
@@ -53,35 +54,35 @@ ThreadPool.prototype = {
     var workerScript, workerFunction, importScripts, parameter, transferBuffers, doneCb;
 
     if (arguments.length < 1) {
-      throw new Error("run(): Too few parameters.");
+      throw new Error('run(): Too few parameters.');
     }
 
-    if (typeof args[0] == "string") {
+    if (typeof args[0] === 'string') {
       // 1st usage example (see doc above)
       workerScript = args.shift();
     } else {
       // 2nd usage example (see doc above)
-      if (typeof args[0] == "object" && args[0] instanceof Array) {
+      if (typeof args[0] === 'object' && args[0] instanceof Array) {
         importScripts = args.shift();
       }
-      if (args.length > 0 && typeof args[0] == "function") {
+      if (args.length > 0 && typeof args[0] === 'function') {
         workerFunction = args.shift();
       } else {
-        throw new Error("run(): Missing obligatory thread logic function.");
+        throw new Error('run(): Missing obligatory thread logic function.');
       }
     }
 
-    if (args.length > 0 && typeof args[0] != "function") {
+    if (args.length > 0 && typeof args[0] !== 'function') {
       parameter = args.shift();
     }
-    if (args.length > 0 && typeof args[0] != "function") {
+    if (args.length > 0 && typeof args[0] !== 'function') {
       transferBuffers = args.shift();
     }
-    if (args.length > 0 && typeof args[0] == "function") {
+    if (args.length > 0 && typeof args[0] === 'function') {
       doneCb = args.shift();
     }
     if (args.length > 0) {
-      throw new Error("run(): Unrecognized parameters: " + args);
+      throw new Error('run(): Unrecognized parameters: ' + args);
     }
 
     ///////////////
@@ -114,7 +115,7 @@ ThreadPool.prototype = {
     return job;
   },
 
-  runJobs : function () {
+  runJobs: function () {
     if (this.idleThreads.length > 0 && this.pendingJobs.length > 0) {
       var thread = this.idleThreads.shift();
       this.activeThreads.push(thread);
@@ -123,30 +124,30 @@ ThreadPool.prototype = {
     }
   },
 
-  _threadDone : function (thread) {
+  onThreadDone: function (thread) {
     this.idleThreads.unshift(thread);
     this.activeThreads.splice(this.activeThreads.indexOf(thread), 1);
     this.runJobs();
   },
 
-  triggerDone : function (result) {
+  triggerDone: function (result) {
     utils.callListeners(this.callbacksDone, [result]);
   },
-  triggerError : function (error) {
+  triggerError: function (error) {
     utils.callListeners(this.callbacksError, [error]);
   },
 
-  clearDone : function() {
+  clearDone: function() {
     this.callbacksDone = [];
   },
 
   /// @see Job.done()
-  done : function(callback) {
+  done: function(callback) {
     utils.addListener(this.callbacksDone, callback);
     return this;
   },
   /// @see Job.error()
-  error : function(callback) {
+  error: function(callback) {
     utils.addListener(this.callbacksError, callback);
     return this;
   }

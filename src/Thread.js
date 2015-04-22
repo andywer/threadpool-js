@@ -1,32 +1,53 @@
+'use strict';
 
-var genericWorkerDataUri = require('./genericWorker').dataUri;
-
+var genericWorker = require('./genericWorker');
+var genericWorkerDataUri = genericWorker.dataUri;
+var genericWorkerCode = genericWorker.genericWorkerCode;
 
 var Thread = function (threadPool) {
   this.threadPool = threadPool;
-  this.worker   = undefined;
+  this.worker     = undefined;
   this.currentJob = undefined;
-  this.lastJob  = undefined;
+  this.lastJob    = undefined;
 };
 
 Thread.prototype = {
-  terminate : function() {
+  terminate: function() {
     if(this.worker) {
       this.worker.terminate();
       this.worker = undefined;
     }
   },
 
-  run : function (job) {
-    var _this = this,
-      needToInitWorker = true,
-      transferBuffers = job.getBuffersToTransfer();
+  run: function (job) {
+    var self = this;
+    var needToInitWorker = true;
+    var transferBuffers = job.getBuffersToTransfer();
 
     this.currentJob = job;
 
     if (!transferBuffers) {
       transferBuffers = [];
     }
+
+    function complete () {
+      self.currentJob = undefined;
+      self.lastJob  = job;
+      self.threadPool.onThreadDone(self);
+    }
+
+    function success (event) {
+      self.currentJob.triggerDone(event.data);
+      self.threadPool.triggerDone(event.data);
+      complete();
+    }
+
+    function error (errorEvent) {
+      self.currentJob.triggerError(errorEvent);
+      self.threadPool.triggerError(errorEvent);
+      complete();
+    }
+
 
     if (this.worker) {
       if (this.lastJob && this.lastJob.functionallyEquals(job)) {
@@ -75,28 +96,11 @@ Thread.prototype = {
       }
 
       this.worker.postMessage({
-        "function" :    job.getFunction(),
-        "importScripts" : job.getImportScripts(),
-        "parameter" :   job.getParameter()
+        'function'      : job.getFunction(),
+        'importScripts' : job.getImportScripts(),
+        'parameter'     : job.getParameter()
       }, transferBuffers);
-    }
 
-    function success (event) {
-      _this.currentJob.triggerDone(event.data);
-      _this.threadPool.triggerDone(event.data);
-      complete();
-    }
-
-    function error (errorEvent) {
-      _this.currentJob.triggerError(errorEvent);
-      _this.threadPool.triggerError(errorEvent);
-      complete();
-    }
-
-    function complete () {
-      _this.currentJob = undefined;
-      _this.lastJob  = job;
-      _this.threadPool._threadDone(_this);
     }
   }
 };

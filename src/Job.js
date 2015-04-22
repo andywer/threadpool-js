@@ -1,3 +1,4 @@
+'use strict';
 
 var utils = require('./utils');
 
@@ -15,7 +16,7 @@ var Job = function (script, param, transferBuffers) {
   this.callbacksDone = [];
   this.callbacksError = [];
 
-  if (typeof script == "function") {
+  if (typeof script === 'function') {
     var funcStr = script.toString();
     this.scriptArgs = funcStr.substring(funcStr.indexOf('(') + 1, funcStr.indexOf(')')).split(',');
     this.scriptBody = funcStr.substring(funcStr.indexOf('{') + 1, funcStr.lastIndexOf('}'));
@@ -28,19 +29,19 @@ var Job = function (script, param, transferBuffers) {
 };
 
 Job.prototype = {
-  getParameter : function () {
+  getParameter: function () {
     return this.param;
   },
 
-  getImportScripts : function () {
+  getImportScripts: function () {
     return this.importScripts;
   },
 
-  setImportScripts : function (scripts) {
+  setImportScripts: function (scripts) {
     this.importScripts = scripts;
   },
 
-  getBuffersToTransfer : function () {
+  getBuffersToTransfer: function () {
     return this.transferBuffers;
   },
 
@@ -49,37 +50,37 @@ Job.prototype = {
    *      Usage:  var f = Function.apply(null, args.concat(body));
    *          (`Function.apply()` replaces `new Function()`)
    */
-  getFunction : function () {
+  getFunction: function () {
     if (!this.scriptArgs) {
       return undefined;
     }
 
     return {
-      args : this.scriptArgs,
-      body : this.scriptBody
+      args: this.scriptArgs,
+      body: this.scriptBody
     };
   },
-  getScriptFile : function () {
+  getScriptFile: function () {
     return this.scriptFile;
   },
 
   /// @return True if `otherJob` uses the same function / same script as this job.
-  functionallyEquals : function (otherJob) {
+  functionallyEquals: function (otherJob) {
     return otherJob && (otherJob instanceof Job) &&
-      arrayEquals(otherJob.scriptArgs, this.scriptArgs) &&
-      otherJob.body == this.body &&
-      otherJob.scriptFile == this.scriptFile;
+      utils.arrayEquals(otherJob.scriptArgs, this.scriptArgs) &&
+      otherJob.body === this.body &&
+      otherJob.scriptFile === this.scriptFile;
   },
 
-  triggerStart : function() {
+  triggerStart: function() {
     utils.callListeners(this.callbacksStart, []);
   },
 
-  triggerDone : function (result) {
+  triggerDone: function (result) {
     utils.callListeners(this.callbacksDone, [result]);
   },
 
-  triggerError : function (error) {
+  triggerError: function (error) {
     utils.callListeners(this.callbacksError, [error]);
   },
 
@@ -88,7 +89,7 @@ Job.prototype = {
    *  @param {function} callback
    *    function(result). `result` is the result value/object returned by the thread.
    */
-  start : function(callback) {
+  start: function(callback) {
     utils.addListener(this.callbacksStart, callback);
     return this;
   },
@@ -98,7 +99,7 @@ Job.prototype = {
    *  @param {function} callback
    *    function(result). `result` is the result value/object returned by the thread.
    */
-  done : function (callback) {
+  done: function (callback) {
     utils.addListener(this.callbacksDone, callback);
     return this;
   },
@@ -108,7 +109,7 @@ Job.prototype = {
    *  @param {function} callback
    *    function(error). `error` is an instance of `Error`.
    */
-  error : function (callback) {
+  error: function (callback) {
     utils.addListener(this.callbacksError, callback);
     return this;
   }

@@ -4,7 +4,7 @@ var gulp      = require('gulp');
 var browserify= require('browserify');
 var concat    = require('gulp-concat');
 var deploy    = require('gulp-gh-pages');
-var jshint    = require('gulp-jshint');
+var eslint    = require('gulp-eslint');
 var mocha     = require('gulp-mocha');
 var source    = require('vinyl-source-stream');
 var uglify    = require('gulp-uglify');
@@ -26,7 +26,9 @@ gulp.task('browserify', function() {
 
 gulp.task('lint', function() {
   return gulp.src('src/*.js')
-    .pipe(jshint());
+    .pipe(eslint())
+    .pipe(eslint.format())
+    .pipe(eslint.failOnError());
 });
 
 

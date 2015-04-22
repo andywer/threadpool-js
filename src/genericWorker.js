@@ -1,4 +1,6 @@
+'use strict';
 
+/*eslint-disable */
 var genericWorkerCode =
   'this.onmessage = function (event) {' +
   '  var fnData = event.data.function;' +
@@ -11,8 +13,9 @@ var genericWorkerCode =
   '    postMessage(result);' +
   '  });' +
   '}';
+/*eslint-enable */
 
-var genericWorkerDataUri = "data:text/javascript;charset=utf-8," + encodeURI(genericWorkerCode);
+var genericWorkerDataUri = 'data:text/javascript;charset=utf-8,' + encodeURI(genericWorkerCode);
 var createBlobURL = window.createBlobURL || window.createObjectURL;
 
 if (!createBlobURL) {
@@ -25,15 +28,16 @@ if (!createBlobURL) {
   }
 }
 
-if (typeof BlobBuilder == "function" && typeof createBlobURL == "function") {
+if (typeof BlobBuilder === 'function' && typeof createBlobURL === 'function') {
   var blobBuilder = new BlobBuilder();
   blobBuilder.append(genericWorkerCode);
   genericWorkerDataUri = createBlobURL( blobBuilder.getBlob() );
-} else if (typeof Blob == "function" && typeof createBlobURL == "function") {
+} else if (typeof Blob === 'function' && typeof createBlobURL === 'function') {
   var blob = new Blob([ genericWorkerCode ], {type: 'text/javascript'});
   genericWorkerDataUri = createBlobURL( blob );
 }
 
 module.exports = {
-  dataUri: genericWorkerDataUri
+  dataUri: genericWorkerDataUri,
+  genericWorkerCode: genericWorkerCode
 };

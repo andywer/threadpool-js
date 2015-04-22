@@ -1,4 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/*global define*/
+'use strict';
 
 /**
  *  Simple threadpool implementation based on web workers.
@@ -9,24 +11,25 @@
  */
 
 if ((typeof Worker === 'undefined' || Worker === null) && console) {
-  console.log("Warning: Browser does not support web workers.");
+  console.log('Warning: Browser does not support web workers.');
 }
 
 
 var ThreadPool = require('./ThreadPool');
 
-if (typeof define == "function") {
+if (typeof define === 'function') {
   // require.js:
   define([], function () { return ThreadPool; });
 } else if (typeof module === 'object') {
   module.exports = ThreadPool;
 }
 
-if (typeof window == "object") {
+if (typeof window === 'object') {
   window.ThreadPool = ThreadPool;
 }
 
 },{"./ThreadPool":4}],2:[function(require,module,exports){
+'use strict';
 
 var utils = require('./utils');
 
@@ -44,7 +47,7 @@ var Job = function (script, param, transferBuffers) {
   this.callbacksDone = [];
   this.callbacksError = [];
 
-  if (typeof script == "function") {
+  if (typeof script === 'function') {
     var funcStr = script.toString();
     this.scriptArgs = funcStr.substring(funcStr.indexOf('(') + 1, funcStr.indexOf(')')).split(',');
     this.scriptBody = funcStr.substring(funcStr.indexOf('{') + 1, funcStr.lastIndexOf('}'));
@@ -57,19 +60,19 @@ var Job = function (script, param, transferBuffers) {
 };
 
 Job.prototype = {
-  getParameter : function () {
+  getParameter: function () {
     return this.param;
   },
 
-  getImportScripts : function () {
+  getImportScripts: function () {
     return this.importScripts;
   },
 
-  setImportScripts : function (scripts) {
+  setImportScripts: function (scripts) {
     this.importScripts = scripts;
   },
 
-  getBuffersToTransfer : function () {
+  getBuffersToTransfer: function () {
     return this.transferBuffers;
   },
 
@@ -78,37 +81,37 @@ Job.prototype = {
    *      Usage:  var f = Function.apply(null, args.concat(body));
    *          (`Function.apply()` replaces `new Function()`)
    */
-  getFunction : function () {
+  getFunction: function () {
     if (!this.scriptArgs) {
       return undefined;
     }
 
     return {
-      args : this.scriptArgs,
-      body : this.scriptBody
+      args: this.scriptArgs,
+      body: this.scriptBody
     };
   },
-  getScriptFile : function () {
+  getScriptFile: function () {
     return this.scriptFile;
   },
 
   /// @return True if `otherJob` uses the same function / same script as this job.
-  functionallyEquals : function (otherJob) {
+  functionallyEquals: function (otherJob) {
     return otherJob && (otherJob instanceof Job) &&
-      arrayEquals(otherJob.scriptArgs, this.scriptArgs) &&
-      otherJob.body == this.body &&
-      otherJob.scriptFile == this.scriptFile;
+      utils.arrayEquals(otherJob.scriptArgs, this.scriptArgs) &&
+      otherJob.body === this.body &&
+      otherJob.scriptFile === this.scriptFile;
   },
 
-  triggerStart : function() {
+  triggerStart: function() {
     utils.callListeners(this.callbacksStart, []);
   },
 
-  triggerDone : function (result) {
+  triggerDone: function (result) {
     utils.callListeners(this.callbacksDone, [result]);
   },
 
-  triggerError : function (error) {
+  triggerError: function (error) {
     utils.callListeners(this.callbacksError, [error]);
   },
 
@@ -117,7 +120,7 @@ Job.prototype = {
    *  @param {function} callback
    *    function(result). `result` is the result value/object returned by the thread.
    */
-  start : function(callback) {
+  start: function(callback) {
     utils.addListener(this.callbacksStart, callback);
     return this;
   },
@@ -127,7 +130,7 @@ Job.prototype = {
    *  @param {function} callback
    *    function(result). `result` is the result value/object returned by the thread.
    */
-  done : function (callback) {
+  done: function (callback) {
     utils.addListener(this.callbacksDone, callback);
     return this;
   },
@@ -137,7 +140,7 @@ Job.prototype = {
    *  @param {function} callback
    *    function(error). `error` is an instance of `Error`.
    */
-  error : function (callback) {
+  error: function (callback) {
     utils.addListener(this.callbacksError, callback);
     return this;
   }
@@ -146,35 +149,56 @@ Job.prototype = {
 module.exports = Job;
 
 },{"./utils":6}],3:[function(require,module,exports){
+'use strict';
 
-var genericWorkerDataUri = require('./genericWorker').dataUri;
-
+var genericWorker = require('./genericWorker');
+var genericWorkerDataUri = genericWorker.dataUri;
+var genericWorkerCode = genericWorker.genericWorkerCode;
 
 var Thread = function (threadPool) {
   this.threadPool = threadPool;
-  this.worker   = undefined;
+  this.worker     = undefined;
   this.currentJob = undefined;
-  this.lastJob  = undefined;
+  this.lastJob    = undefined;
 };
 
 Thread.prototype = {
-  terminate : function() {
+  terminate: function() {
     if(this.worker) {
       this.worker.terminate();
       this.worker = undefined;
     }
   },
 
-  run : function (job) {
-    var _this = this,
-      needToInitWorker = true,
-      transferBuffers = job.getBuffersToTransfer();
+  run: function (job) {
+    var self = this;
+    var needToInitWorker = true;
+    var transferBuffers = job.getBuffersToTransfer();
 
     this.currentJob = job;
 
     if (!transferBuffers) {
       transferBuffers = [];
     }
+
+    function complete () {
+      self.currentJob = undefined;
+      self.lastJob  = job;
+      self.threadPool.onThreadDone(self);
+    }
+
+    function success (event) {
+      self.currentJob.triggerDone(event.data);
+      self.threadPool.triggerDone(event.data);
+      complete();
+    }
+
+    function error (errorEvent) {
+      self.currentJob.triggerError(errorEvent);
+      self.threadPool.triggerError(errorEvent);
+      complete();
+    }
+
 
     if (this.worker) {
       if (this.lastJob && this.lastJob.functionallyEquals(job)) {
@@ -223,28 +247,11 @@ Thread.prototype = {
       }
 
       this.worker.postMessage({
-        "function" :    job.getFunction(),
-        "importScripts" : job.getImportScripts(),
-        "parameter" :   job.getParameter()
+        'function'      : job.getFunction(),
+        'importScripts' : job.getImportScripts(),
+        'parameter'     : job.getParameter()
       }, transferBuffers);
-    }
 
-    function success (event) {
-      _this.currentJob.triggerDone(event.data);
-      _this.threadPool.triggerDone(event.data);
-      complete();
-    }
-
-    function error (errorEvent) {
-      _this.currentJob.triggerError(errorEvent);
-      _this.threadPool.triggerError(errorEvent);
-      complete();
-    }
-
-    function complete () {
-      _this.currentJob = undefined;
-      _this.lastJob  = job;
-      _this.threadPool._threadDone(_this);
     }
   }
 };
@@ -252,6 +259,7 @@ Thread.prototype = {
 module.exports = Thread;
 
 },{"./genericWorker":5}],4:[function(require,module,exports){
+'use strict';
 
 var Job = require('./Job');
 var Thread = require('./Thread');
@@ -282,7 +290,7 @@ var ThreadPool = function (size, evalScriptUrl) {
 };
 
 ThreadPool.prototype = {
-  terminateAll : function() {
+  terminateAll: function() {
     for(var i = 0; i < this.idleThreads.length; i++) {
       this.idleThreads[i].terminate();
     }
@@ -299,7 +307,7 @@ ThreadPool.prototype = {
    *         - or -
    *         run ([{string[]} ImportScripts, ] {function} WorkerFunction(param, doneCB) [, {object|scalar} Parameter[, {objects[]} BuffersToTransfer]] [, {function} DoneCallback(result)])
    */
-  run : function () {
+  run: function () {
     ////////////////////
     // Parse arguments:
 
@@ -307,35 +315,35 @@ ThreadPool.prototype = {
     var workerScript, workerFunction, importScripts, parameter, transferBuffers, doneCb;
 
     if (arguments.length < 1) {
-      throw new Error("run(): Too few parameters.");
+      throw new Error('run(): Too few parameters.');
     }
 
-    if (typeof args[0] == "string") {
+    if (typeof args[0] === 'string') {
       // 1st usage example (see doc above)
       workerScript = args.shift();
     } else {
       // 2nd usage example (see doc above)
-      if (typeof args[0] == "object" && args[0] instanceof Array) {
+      if (typeof args[0] === 'object' && args[0] instanceof Array) {
         importScripts = args.shift();
       }
-      if (args.length > 0 && typeof args[0] == "function") {
+      if (args.length > 0 && typeof args[0] === 'function') {
         workerFunction = args.shift();
       } else {
-        throw new Error("run(): Missing obligatory thread logic function.");
+        throw new Error('run(): Missing obligatory thread logic function.');
       }
     }
 
-    if (args.length > 0 && typeof args[0] != "function") {
+    if (args.length > 0 && typeof args[0] !== 'function') {
       parameter = args.shift();
     }
-    if (args.length > 0 && typeof args[0] != "function") {
+    if (args.length > 0 && typeof args[0] !== 'function') {
       transferBuffers = args.shift();
     }
-    if (args.length > 0 && typeof args[0] == "function") {
+    if (args.length > 0 && typeof args[0] === 'function') {
       doneCb = args.shift();
     }
     if (args.length > 0) {
-      throw new Error("run(): Unrecognized parameters: " + args);
+      throw new Error('run(): Unrecognized parameters: ' + args);
     }
 
     ///////////////
@@ -368,7 +376,7 @@ ThreadPool.prototype = {
     return job;
   },
 
-  runJobs : function () {
+  runJobs: function () {
     if (this.idleThreads.length > 0 && this.pendingJobs.length > 0) {
       var thread = this.idleThreads.shift();
       this.activeThreads.push(thread);
@@ -377,30 +385,30 @@ ThreadPool.prototype = {
     }
   },
 
-  _threadDone : function (thread) {
+  onThreadDone: function (thread) {
     this.idleThreads.unshift(thread);
     this.activeThreads.splice(this.activeThreads.indexOf(thread), 1);
     this.runJobs();
   },
 
-  triggerDone : function (result) {
+  triggerDone: function (result) {
     utils.callListeners(this.callbacksDone, [result]);
   },
-  triggerError : function (error) {
+  triggerError: function (error) {
     utils.callListeners(this.callbacksError, [error]);
   },
 
-  clearDone : function() {
+  clearDone: function() {
     this.callbacksDone = [];
   },
 
   /// @see Job.done()
-  done : function(callback) {
+  done: function(callback) {
     utils.addListener(this.callbacksDone, callback);
     return this;
   },
   /// @see Job.error()
-  error : function(callback) {
+  error: function(callback) {
     utils.addListener(this.callbacksError, callback);
     return this;
   }
@@ -416,7 +424,9 @@ ThreadPool.defaultSize = 8;
 module.exports = ThreadPool;
 
 },{"./Job":2,"./Thread":3,"./utils":6}],5:[function(require,module,exports){
+'use strict';
 
+/*eslint-disable */
 var genericWorkerCode =
   'this.onmessage = function (event) {' +
   '  var fnData = event.data.function;' +
@@ -429,8 +439,9 @@ var genericWorkerCode =
   '    postMessage(result);' +
   '  });' +
   '}';
+/*eslint-enable */
 
-var genericWorkerDataUri = "data:text/javascript;charset=utf-8," + encodeURI(genericWorkerCode);
+var genericWorkerDataUri = 'data:text/javascript;charset=utf-8,' + encodeURI(genericWorkerCode);
 var createBlobURL = window.createBlobURL || window.createObjectURL;
 
 if (!createBlobURL) {
@@ -443,34 +454,36 @@ if (!createBlobURL) {
   }
 }
 
-if (typeof BlobBuilder == "function" && typeof createBlobURL == "function") {
+if (typeof BlobBuilder === 'function' && typeof createBlobURL === 'function') {
   var blobBuilder = new BlobBuilder();
   blobBuilder.append(genericWorkerCode);
   genericWorkerDataUri = createBlobURL( blobBuilder.getBlob() );
-} else if (typeof Blob == "function" && typeof createBlobURL == "function") {
+} else if (typeof Blob === 'function' && typeof createBlobURL === 'function') {
   var blob = new Blob([ genericWorkerCode ], {type: 'text/javascript'});
   genericWorkerDataUri = createBlobURL( blob );
 }
 
 module.exports = {
-  dataUri: genericWorkerDataUri
+  dataUri: genericWorkerDataUri,
+  genericWorkerCode: genericWorkerCode
 };
 
 },{}],6:[function(require,module,exports){
+'use strict';
 
 function arrayEquals (a, b) {
   return !(a < b || a > b);
 }
 
 function addListener (callbacksArray, callback) {
-  if (typeof callback != "function") {
-    throw new Error("Expected callback function as parameter.");
+  if (typeof callback !== 'function') {
+    throw new Error('Expected callback function as parameter.');
   }
 
   // Check that this callbacks has not yet been registered:
   for (var i = 0; i < callbacksArray.length; i++) {
     var cb = callbacksArray[i];
-    if (cb == callback) {
+    if (cb === callback) {
       return;
     }
   }

@@ -1,0 +1,15 @@
+{
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "globals": {
+    "Blob": true,
+    "BlobBuilder": true
+  },
+  "rules": {
+    "key-spacing": false,
+    "no-multi-spaces": [1, { "exceptions": { "VariableDeclarator": true } }],
+    "quotes": [1, "single"]
+  }
+}
