@@ -30,7 +30,7 @@
   "scripts": {
     "gulp": "./node_modules/.bin/gulp",
     "precommit": "npm run gulp && sleep 1s && git add *.min.js",
-    "test": "./node_modules/.bin/mocha test"
+    "test": "./node_modules/.bin/mocha spec"
   },
   "main": "src/threadpool.js"
 }
