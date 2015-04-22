@@ -60,7 +60,8 @@ gulp.task('test', ['dist'], function() {
 
 gulp.task('deploy-copy-dist', ['uglify'], function() {
   return gulp.src('dist/*')
-    .pipe(gulp.dest('public'));
+    .pipe(gulp.dest('public'))          // just for backward compatibility
+    .pipe(gulp.dest('public/dist'));
 });
 
 gulp.task('deploy-copy-samples', function() {

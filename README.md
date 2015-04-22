@@ -8,7 +8,7 @@ It's key features are *portability* and *ease of use*. The library can either be
 You can add threadpool-js to your project using bower or just by adding this script tag:
 
 ```html
-<script type="text/javascript" src="http://andywer.github.io/threadpool-js/threadpool.min.js"></script>
+<script type="text/javascript" src="http://andywer.github.io/threadpool-js/dist/threadpool.min.js"></script>
 ```
 
 ## Example use
