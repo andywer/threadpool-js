@@ -1,11 +1,19 @@
 ## threadpool.js [![Build Status](https://travis-ci.org/andywer/threadpool-js.svg?branch=master)](https://travis-ci.org/andywer/threadpool-js) [![npm version](https://badge.fury.io/js/threadpool-js.svg)](http://badge.fury.io/js/threadpool-js) [![Bower version](https://badge.fury.io/bo/threadpool-js.svg)](http://badge.fury.io/bo/threadpool-js)
 
 _threadpool.js_ is aimed to be a general-purpose multi-threading library for Javascript.
-It's key features are *portability* and *ease of use*. The library can either be used in a stand-alone fashion or as a *[require.js](http://requirejs.org/)* module.
+Its key features are *portability* and *ease of use*. The library can either be used in a stand-alone fashion or as a *[require.js](http://requirejs.org/)* module.
 
 ## Usage
 
-You can add threadpool-js to your project using bower or just by adding this script tag:
+You can add threadpool-js to your project using npm or bower:
+
+```bash
+npm install --save threadpool-js
+# or
+bower install --save threadpool-js
+```
+
+Or just by adding this script tag:
 
 ```html
 <script type="text/javascript" src="http://andywer.github.io/threadpool-js/dist/threadpool.min.js"></script>
@@ -14,7 +22,7 @@ You can add threadpool-js to your project using bower or just by adding this scr
 ## Example use
 
 Include the library at first. Just add the *threadpool.js* file to your project and include it per `<script>` tag.
-Alternatively you may use *[require.js](http://requirejs.org/)*.
+Alternatively you may use *[require.js](http://requirejs.org/)* or require it as a node.js module when using *[browserify](http://browserify.org/)* or *[webpack](http://webpack.github.io/)*.
 
 ```javascript
 // Init new threadpool with default size
