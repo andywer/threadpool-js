@@ -33,7 +33,8 @@ pool.run(mythread, "Hello")
   .done(function(result) {
     document.write("Thread #1: " + result);
   });
-pool.run(mythread, " World")
+// Run a external worker script
+pool.run("scripts/worker.js", " World")
   .done(function(result) {
     document.write("Thread #2: " + result);
   });
