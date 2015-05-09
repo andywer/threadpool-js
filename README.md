@@ -29,11 +29,13 @@ Alternatively you may use *[require.js](http://requirejs.org/)* or require it as
 var pool = new ThreadPool();
 
 // Spawn two threads
-pool.run(mythread, "Hello")
+pool
+  .run(mythread, "Hello")
   .done(function(result) {
     document.write("Thread #1: " + result);
   });
-pool.run(mythread, " World")
+pool
+  .run(mythread, " World")
   .done(function(result) {
     document.write("Thread #2: " + result);
   });
@@ -46,6 +48,23 @@ function mythread (param, done) {
   done( param.toUpperCase() );
 }
 ```
+
+## Running external scripts
+
+You can also choose to run another javascript file instead of passing a function:
+
+```javascript
+// Init new threadpool with default size
+var pool = new ThreadPool();
+
+// Spawn thread running another script file
+pool
+  .run("/path/to/script.js", { foo: 'bar' })
+  .done(function(result) {
+    console.log("Job finished and returned: ", result);
+  });
+```
+
 
 ## Support for transferable objects
 
