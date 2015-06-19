@@ -65,6 +65,14 @@ pool
   });
 ```
 
+## Using libraries in the worker code
+
+Assume that you want to use jQuery in your thread code. You cannot manipulate the DOM from there, but you might need some convenience methods. You can import other Javascript files into the scope of your thread code like this:
+
+```javascript
+pool.run(["/path/to/jQuery.min.js"], function(param, done) { /* do something awesome */ });
+```
+
 
 ## Support for transferable objects
 
