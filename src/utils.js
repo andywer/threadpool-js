@@ -27,9 +27,14 @@ function callListeners (callbacksArray, params) {
   }
 }
 
+function runDeferred (callback) {
+  setTimeout(callback, 0);
+}
+
 
 module.exports = {
   arrayEquals: arrayEquals,
   addListener: addListener,
-  callListeners: callListeners
+  callListeners: callListeners,
+  runDeferred: runDeferred
 };

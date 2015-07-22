@@ -107,10 +107,7 @@ ThreadPool.prototype = {
 
     this.pendingJobs.push(job);
 
-    var self = this;
-    setTimeout(function() {
-      self.runJobs();
-    }, 0);
+    utils.runDeferred(this.runJobs.bind(this));
 
     return job;
   },

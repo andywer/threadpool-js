@@ -368,10 +368,7 @@ ThreadPool.prototype = {
 
     this.pendingJobs.push(job);
 
-    var self = this;
-    setTimeout(function() {
-      self.runJobs();
-    }, 0);
+    utils.runDeferred(this.runJobs.bind(this));
 
     return job;
   },
@@ -498,11 +495,16 @@ function callListeners (callbacksArray, params) {
   }
 }
 
+function runDeferred (callback) {
+  setTimeout(callback, 0);
+}
+
 
 module.exports = {
   arrayEquals: arrayEquals,
   addListener: addListener,
-  callListeners: callListeners
+  callListeners: callListeners,
+  runDeferred: runDeferred
 };
 
 },{}]},{},[1]);
