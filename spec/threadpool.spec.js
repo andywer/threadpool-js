@@ -85,4 +85,33 @@ describe('threadpool', function() {
 
   });
 
+
+  it('allDone() is triggered once on overall completion', function(done) {
+
+    var pool = new ThreadPool()
+      , actionCalled = 0
+      , allDoneCalled = 0;
+
+    var action = function(param, actionDone) {
+      actionDone();
+    };
+
+    pool.run(action);
+    pool.run(action);
+
+    pool.done(function() {
+      actionCalled++;
+    });
+
+    pool.allDone(function() {
+      allDoneCalled++;
+    })
+
+    setTimeout(function() {
+      expect(allDoneCalled).to.equal(1);
+      done();
+    }, 500);
+
+  });
+
 });

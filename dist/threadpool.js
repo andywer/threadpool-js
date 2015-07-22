@@ -277,12 +277,13 @@ var ThreadPool = function (size, evalScriptUrl) {
 
   this.size = size;
   this.evalWorkerUrl = evalScriptUrl;
-  this.pendingJobs = [];
-  this.idleThreads = [];
+  this.pendingJobs   = [];
+  this.idleThreads   = [];
   this.activeThreads = [];
 
-  this.callbacksDone = [];
-  this.callbacksError = [];
+  this.callbacksDone    = [];
+  this.callbacksError   = [];
+  this.callbacksAllDone = [];
 
   for (var i = 0; i < size; i++) {
     this.idleThreads.push( new Thread(this) );
@@ -308,6 +309,8 @@ ThreadPool.prototype = {
    *         run ([{string[]} ImportScripts, ] {function} WorkerFunction(param, doneCB) [, {object|scalar} Parameter[, {objects[]} BuffersToTransfer]] [, {function} DoneCallback(result)])
    */
   run: function () {
+    var self = this;
+
     ////////////////////
     // Parse arguments:
 
@@ -359,6 +362,8 @@ ThreadPool.prototype = {
       }
     }
 
+    job.done(function () { self.jobIsDone(job); });
+
     if (doneCb) {
       job.done(doneCb);
     }
@@ -399,6 +404,13 @@ ThreadPool.prototype = {
     this.callbacksDone = [];
   },
 
+  jobIsDone: function() {
+    if (this.pendingJobs.length === 0) {
+      utils.callListeners(this.callbacksAllDone, []);
+      this.callbacksAllDone = [];
+    }
+  },
+
   /// @see Job.done()
   done: function(callback) {
     utils.addListener(this.callbacksDone, callback);
@@ -407,6 +419,10 @@ ThreadPool.prototype = {
   /// @see Job.error()
   error: function(callback) {
     utils.addListener(this.callbacksError, callback);
+    return this;
+  },
+  allDone: function(callback) {
+    utils.addListener(this.callbacksAllDone, callback);
     return this;
   }
 };
