@@ -43,6 +43,10 @@ pool
 // Hint: Keep in mind that you are free to use the done() and error() handlers
 //       on single jobs and the whole pool!
 
+pool.allDone(function() {
+  document.write("All jobs are done.");
+});
+
 // Thread logic
 function mythread (param, done) {
   done( param.toUpperCase() );
