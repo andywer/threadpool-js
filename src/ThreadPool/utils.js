@@ -1,10 +1,10 @@
 'use strict';
 
-function arrayEquals (a, b) {
+export function arrayEquals (a, b) {
   return !(a < b || a > b);
 }
 
-function addListener (callbacksArray, callback) {
+export function addListener (callbacksArray, callback) {
   if (typeof callback !== 'function') {
     throw new Error('Expected callback function as parameter.');
   }
@@ -20,21 +20,13 @@ function addListener (callbacksArray, callback) {
   callbacksArray.push(callback);
 }
 
-function callListeners (callbacksArray, params) {
+export function callListeners (callbacksArray, params) {
   for (var i = 0; i < callbacksArray.length; i++) {
     var cb = callbacksArray[i];
     cb.apply(null, params);
   }
 }
 
-function runDeferred (callback) {
+export function runDeferred (callback) {
   setTimeout(callback, 0);
 }
-
-
-module.exports = {
-  arrayEquals: arrayEquals,
-  addListener: addListener,
-  callListeners: callListeners,
-  runDeferred: runDeferred
-};

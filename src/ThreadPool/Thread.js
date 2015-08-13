@@ -1,25 +1,28 @@
 'use strict';
 
-var genericWorker = require('./genericWorker');
+import genericWorker from './../genericWorker';
+
 var genericWorkerDataUri = genericWorker.dataUri;
 var genericWorkerCode = genericWorker.genericWorkerCode;
 
-var Thread = function (threadPool) {
-  this.threadPool = threadPool;
-  this.worker     = undefined;
-  this.currentJob = undefined;
-  this.lastJob    = undefined;
-};
 
-Thread.prototype = {
-  terminate: function() {
+export default class Thread {
+
+  constructor(threadPool) {
+    this.threadPool = threadPool;
+    this.worker     = undefined;
+    this.currentJob = undefined;
+    this.lastJob    = undefined;
+  }
+
+  terminate() {
     if(this.worker) {
       this.worker.terminate();
       this.worker = undefined;
     }
-  },
+  }
 
-  run: function (job) {
+  run(job) {
     var self = this;
     var needToInitWorker = true;
     var transferBuffers = job.getBuffersToTransfer();
@@ -103,6 +106,5 @@ Thread.prototype = {
 
     }
   }
-};
 
-module.exports = Thread;
+}

@@ -1,15 +1,25 @@
 {
-  "env": {
-    "browser": true,
-    "node": true
+  "ecmaFeatures" : {
+    "arrowFunctions" : true,
+    "blockBindings"  : true,
+    "classes"        : true,
+    "defaultParams"  : true,
+    "destructuring"  : true,
+    "jsx"            : true,
+    "modules"        : true
   },
-  "globals": {
-    "Blob": true,
-    "BlobBuilder": true
+  "env" : {
+    "browser" : true,
+    "node"    : true
   },
-  "rules": {
-    "key-spacing": false,
-    "no-multi-spaces": 0,
-    "quotes": [1, "single"]
+  "globals" : {
+    "Blob"        : true,
+    "BlobBuilder" : true
+  },
+  "rules" : {
+    "global-strict"   : 0,
+    "key-spacing"     : [0, { "beforeColon": false, "afterColon": true }],
+    "no-multi-spaces" : 0,
+    "quotes"          : [1, "single", "avoid-escape"]
   }
 }

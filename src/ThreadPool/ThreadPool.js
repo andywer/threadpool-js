@@ -1,53 +1,54 @@
 'use strict';
 
-var Job = require('./Job');
-var Thread = require('./Thread');
+import Job from './Job';
+import Thread from './Thread';
 
-var utils = require('./utils');
+import * as utils from './utils';
 
 
-/**
- *  @param {int} [size]       Optional. Number of threads. Default is `ThreadPool.defaultSize`.
- *  @param {string} [evalScriptUrl] Optional. URL to `evalWorker[.min].js` script (for IE compatibility).
- */
-var ThreadPool = function (size, evalScriptUrl) {
-  size = size || ThreadPool.defaultSize;
-  evalScriptUrl = evalScriptUrl || '';
+export default class ThreadPool {
 
-  this.size = size;
-  this.evalWorkerUrl = evalScriptUrl;
-  this.pendingJobs   = [];
-  this.idleThreads   = [];
-  this.activeThreads = [];
+  /**
+   *  @param {int} [size]       Optional. Number of threads. Default is `ThreadPool.defaultSize`.
+   *  @param {string} [evalScriptUrl] Optional. URL to `evalWorker[.min].js` script (for IE compatibility).
+   */
+  constructor(size, evalScriptUrl) {
+    size = size || ThreadPool.defaultSize;
+    evalScriptUrl = evalScriptUrl || '';
 
-  this.callbacksDone    = [];
-  this.callbacksError   = [];
-  this.callbacksAllDone = [];
+    this.size = size;
+    this.evalWorkerUrl = evalScriptUrl;
+    this.pendingJobs   = [];
+    this.idleThreads   = [];
+    this.activeThreads = [];
 
-  for (var i = 0; i < size; i++) {
-    this.idleThreads.push( new Thread(this) );
+    this.callbacksDone    = [];
+    this.callbacksError   = [];
+    this.callbacksAllDone = [];
+
+    for (var i = 0; i < size; i++) {
+      this.idleThreads.push( new Thread(this) );
+    }
   }
-};
 
-ThreadPool.prototype = {
-  terminateAll: function() {
-    for(var i = 0; i < this.idleThreads.length; i++) {
+  terminateAll() {
+    for (var i = 0; i < this.idleThreads.length; i++) {
       this.idleThreads[i].terminate();
     }
 
-    for(i = 0; i < this.activeThreads.length; i++) {
-      if(this.activeThreads[i]) {
+    for (i = 0; i < this.activeThreads.length; i++) {
+      if (this.activeThreads[i]) {
         this.activeThreads[i].terminate();
       }
     }
-  },
+  }
 
   /**
    *  Usage: run ({string} WorkerScript [, {object|scalar} Parameter[, {object[]} BuffersToTransfer]] [, {function} doneCallback(returnValue)])
    *         - or -
    *         run ([{string[]} ImportScripts, ] {function} WorkerFunction(param, doneCB) [, {object|scalar} Parameter[, {objects[]} BuffersToTransfer]] [, {function} DoneCallback(result)])
    */
-  run: function () {
+  run() {
     var self = this;
 
     ////////////////////
@@ -115,62 +116,59 @@ ThreadPool.prototype = {
     utils.runDeferred(this.runJobs.bind(this));
 
     return job;
-  },
+  }
 
-  runJobs: function () {
+  runJobs() {
     if (this.idleThreads.length > 0 && this.pendingJobs.length > 0) {
       var thread = this.idleThreads.shift();
       this.activeThreads.push(thread);
       var job = this.pendingJobs.shift();
       thread.run(job);
     }
-  },
+  }
 
-  onThreadDone: function (thread) {
+  onThreadDone(thread) {
     this.idleThreads.unshift(thread);
     this.activeThreads.splice(this.activeThreads.indexOf(thread), 1);
     this.runJobs();
-  },
+  }
 
-  triggerDone: function (result) {
+  triggerDone(result) {
     utils.callListeners(this.callbacksDone, [result]);
-  },
-  triggerError: function (error) {
+  }
+  triggerError(error) {
     utils.callListeners(this.callbacksError, [error]);
-  },
+  }
 
-  clearDone: function() {
+  clearDone() {
     this.callbacksDone = [];
-  },
+  }
 
-  jobIsDone: function() {
+  jobIsDone() {
     if (this.pendingJobs.length === 0) {
       utils.callListeners(this.callbacksAllDone, []);
       this.callbacksAllDone = [];
     }
-  },
+  }
 
   /// @see Job.done()
-  done: function(callback) {
+  done(callback) {
     utils.addListener(this.callbacksDone, callback);
     return this;
-  },
+  }
   /// @see Job.error()
-  error: function(callback) {
+  error(callback) {
     utils.addListener(this.callbacksError, callback);
     return this;
-  },
-  allDone: function(callback) {
+  }
+  allDone(callback) {
     utils.addListener(this.callbacksAllDone, callback);
     return this;
   }
-};
+}
 
 
 //////////////////////
 // Set default values:
 
 ThreadPool.defaultSize = 8;
-
-
-module.exports = ThreadPool;

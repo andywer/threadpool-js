@@ -1,13 +1,14 @@
 'use strict';
 
-var gulp      = require('gulp');
-var browserify= require('browserify');
-var concat    = require('gulp-concat');
-var deploy    = require('gulp-gh-pages');
-var eslint    = require('gulp-eslint');
-var mocha     = require('gulp-mocha');
-var source    = require('vinyl-source-stream');
-var uglify    = require('gulp-uglify');
+var gulp       = require('gulp');
+var babel      = require('gulp-babel');
+var browserify = require('browserify');
+var concat     = require('gulp-concat');
+var deploy     = require('gulp-gh-pages');
+var eslint     = require('gulp-eslint');
+var mocha      = require('gulp-mocha');
+var source     = require('vinyl-source-stream');
+var uglify     = require('gulp-uglify');
 
 
 // Fix for gulp not terminating after mocha finishes
@@ -16,19 +17,26 @@ gulp.doneCallback = function (err) {
 };
 
 
-gulp.task('browserify', function() {
-  return browserify('./src/index.js')
-    .bundle()
-    .pipe(source('threadpool.js'))
-    .pipe(gulp.dest('dist/'));
-});
-
-
 gulp.task('lint', function() {
-  return gulp.src('src/*.js')
+  return gulp.src('src/**/*.js')
     .pipe(eslint())
     .pipe(eslint.format())
     .pipe(eslint.failOnError());
+});
+
+
+gulp.task('babel', function() {
+  return gulp.src('src/**/*.js')
+    .pipe(babel())
+    .pipe(gulp.dest('lib/'));
+});
+
+
+gulp.task('browserify', ['babel'], function() {
+  return browserify('./lib/index.js')
+    .bundle()
+    .pipe(source('threadpool.js'))
+    .pipe(gulp.dest('dist/'));
 });
 
 
@@ -39,8 +47,8 @@ gulp.task('uglify-lib', ['browserify'], function() {
     .pipe(gulp.dest('dist/'));
 });
 
-gulp.task('uglify-evalworker', function() {
-  return gulp.src('src/evalworker.js')
+gulp.task('uglify-evalworker', ['babel'], function() {
+  return gulp.src('lib/evalworker.js')
     .pipe(uglify())
     .pipe(concat('evalworker.min.js'))
     .pipe(gulp.dest('dist/'));

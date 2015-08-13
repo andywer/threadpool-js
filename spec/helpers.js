@@ -25,7 +25,7 @@ global.Blob = FakeBlob;
 global.createBlobURL = fakeCreateBlobURL;
 
 module.exports = {
-  ThreadPool: require('../src/ThreadPool'),
+  ThreadPool: require('../lib'),
   Worker: global.Worker,
   window: window
 };

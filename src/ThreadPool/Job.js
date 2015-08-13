@@ -1,56 +1,57 @@
 'use strict';
 
-var utils = require('./utils');
+import * as utils from './utils';
 
 
-/**
- *  @param {string} script Script filename or function.
- *  @param {object|array} [param] Optional. Parameter (or array of parameters) to be passed to the thread or false/undefined.
- *  @param {object[]} [transferBuffers] Optional. Array of buffers to be transferred to the worker context.
- */
-var Job = function (script, param, transferBuffers) {
-  this.param = param;
-  this.transferBuffers = transferBuffers;
-  this.importScripts = [];
-  this.callbacksStart = [];
-  this.callbacksDone = [];
-  this.callbacksError = [];
+export default class Job {
 
-  if (typeof script === 'function') {
-    var funcStr = script.toString();
-    this.scriptArgs = funcStr.substring(funcStr.indexOf('(') + 1, funcStr.indexOf(')')).split(',');
-    this.scriptBody = funcStr.substring(funcStr.indexOf('{') + 1, funcStr.lastIndexOf('}'));
-    this.scriptFile = undefined;
-  } else {
-    this.scriptArgs = undefined;
-    this.scriptBody = undefined;
-    this.scriptFile = script;
+  /**
+   *  @param {string} script Script filename or function.
+   *  @param {object|array} [param] Optional. Parameter (or array of parameters) to be passed to the thread or false/undefined.
+   *  @param {object[]} [transferBuffers] Optional. Array of buffers to be transferred to the worker context.
+   */
+  constructor(script, param, transferBuffers) {
+    this.param = param;
+    this.transferBuffers = transferBuffers;
+    this.importScripts = [];
+    this.callbacksStart = [];
+    this.callbacksDone = [];
+    this.callbacksError = [];
+
+    if (typeof script === 'function') {
+      var funcStr = script.toString();
+      this.scriptArgs = funcStr.substring(funcStr.indexOf('(') + 1, funcStr.indexOf(')')).split(',');
+      this.scriptBody = funcStr.substring(funcStr.indexOf('{') + 1, funcStr.lastIndexOf('}'));
+      this.scriptFile = undefined;
+    } else {
+      this.scriptArgs = undefined;
+      this.scriptBody = undefined;
+      this.scriptFile = script;
+    }
   }
-};
 
-Job.prototype = {
-  getParameter: function () {
+  getParameter() {
     return this.param;
-  },
+  }
 
-  getImportScripts: function () {
+  getImportScripts() {
     return this.importScripts;
-  },
+  }
 
-  setImportScripts: function (scripts) {
+  setImportScripts(scripts) {
     this.importScripts = scripts;
-  },
+  }
 
-  getBuffersToTransfer: function () {
+  getBuffersToTransfer() {
     return this.transferBuffers;
-  },
+  }
 
   /**
    *  @return {object} Object: { args: ["argument name", ...], body: "<code>" }
    *      Usage:  var f = Function.apply(null, args.concat(body));
    *          (`Function.apply()` replaces `new Function()`)
    */
-  getFunction: function () {
+  getFunction() {
     if (!this.scriptArgs) {
       return undefined;
     }
@@ -59,60 +60,59 @@ Job.prototype = {
       args: this.scriptArgs,
       body: this.scriptBody
     };
-  },
-  getScriptFile: function () {
+  }
+  getScriptFile() {
     return this.scriptFile;
-  },
+  }
 
   /// @return True if `otherJob` uses the same function / same script as this job.
-  functionallyEquals: function (otherJob) {
+  functionallyEquals(otherJob) {
     return otherJob && (otherJob instanceof Job) &&
       utils.arrayEquals(otherJob.scriptArgs, this.scriptArgs) &&
       otherJob.body === this.body &&
       otherJob.scriptFile === this.scriptFile;
-  },
+  }
 
-  triggerStart: function() {
+  triggerStart() {
     utils.callListeners(this.callbacksStart, []);
-  },
+  }
 
-  triggerDone: function (result) {
+  triggerDone(result) {
     utils.callListeners(this.callbacksDone, [result]);
-  },
+  }
 
-  triggerError: function (error) {
+  triggerError(error) {
     utils.callListeners(this.callbacksError, [error]);
-  },
+  }
 
   /**
    *  Adds a callback function that is called when the job is about to start.
    *  @param {function} callback
    *    function(result). `result` is the result value/object returned by the thread.
    */
-  start: function(callback) {
+  start(callback) {
     utils.addListener(this.callbacksStart, callback);
     return this;
-  },
+  }
 
   /**
    *  Adds a callback function that is called when the job has been (successfully) finished.
    *  @param {function} callback
    *    function(result). `result` is the result value/object returned by the thread.
    */
-  done: function (callback) {
+  done(callback) {
     utils.addListener(this.callbacksDone, callback);
     return this;
-  },
+  }
 
   /**
    *  Adds a callback function that is called if the job fails.
    *  @param {function} callback
    *    function(error). `error` is an instance of `Error`.
    */
-  error: function (callback) {
+  error(callback) {
     utils.addListener(this.callbacksError, callback);
     return this;
   }
-};
 
-module.exports = Job;
+}
