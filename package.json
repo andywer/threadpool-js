@@ -35,5 +35,8 @@
     "precommit": "npm run gulp && sleep 1s && git add *.min.js",
     "test": "./node_modules/.bin/mocha spec"
   },
-  "main": "lib/ThreadPool.js"
+  "main": "lib/ThreadPool.js",
+  "dependencies": {
+    "eventemitter3": "^1.1.1"
+  }
 }

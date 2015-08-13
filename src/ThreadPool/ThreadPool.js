@@ -1,18 +1,24 @@
 'use strict';
 
+import EventEmitter from 'eventemitter3';
+
 import Job from './Job';
 import Thread from './Thread';
 
-import * as utils from './utils';
 
+function runDeferred(callback) {
+  setTimeout(callback, 0);
+}
 
-export default class ThreadPool {
+export default class ThreadPool extends EventEmitter {
 
   /**
    *  @param {int} [size]       Optional. Number of threads. Default is `ThreadPool.defaultSize`.
    *  @param {String} [evalScriptUrl] Optional. URL to `evalWorker[.min].js` script (for IE compatibility).
    */
   constructor(size, evalScriptUrl) {
+    super();
+
     size = size || ThreadPool.defaultSize;
     evalScriptUrl = evalScriptUrl || '';
 
@@ -21,10 +27,6 @@ export default class ThreadPool {
     this.pendingJobs   = [];
     this.idleThreads   = [];
     this.activeThreads = [];
-
-    this.callbacksDone    = [];
-    this.callbacksError   = [];
-    this.callbacksAllDone = [];
 
     for (var i = 0; i < size; i++) {
       this.idleThreads.push(new Thread(this));
@@ -105,7 +107,7 @@ export default class ThreadPool {
     // Run job:
 
     this.pendingJobs.push(job);
-    utils.runDeferred(this.runJobs.bind(this));
+    runDeferred(this.runJobs.bind(this));
 
     return job;
   }
@@ -126,37 +128,26 @@ export default class ThreadPool {
     this.runJobs();
   }
 
-  triggerDone(result) {
-    utils.callListeners(this.callbacksDone, [result]);
-  }
-  triggerError(error) {
-    utils.callListeners(this.callbacksError, [error]);
-  }
-
   clearDone() {
-    this.callbacksDone = [];
+    this.removeAllListeners('done');
   }
 
   jobIsDone() {
     if (this.pendingJobs.length === 0) {
-      utils.callListeners(this.callbacksAllDone, []);
-      this.callbacksAllDone = [];
+      this.emit('allDone');
     }
   }
 
   /** @see Job.done() */
   done(callback) {
-    utils.addListener(this.callbacksDone, callback);
-    return this;
+    return this.on('done', callback);
   }
   /** @see Job.error() */
   error(callback) {
-    utils.addListener(this.callbacksError, callback);
-    return this;
+    return this.on('error', callback);
   }
   allDone(callback) {
-    utils.addListener(this.callbacksAllDone, callback);
-    return this;
+    return this.once('allDone', callback);
   }
 }
 

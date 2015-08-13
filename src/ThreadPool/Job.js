@@ -1,9 +1,13 @@
 'use strict';
 
-import * as utils from './utils';
+import EventEmitter from 'eventemitter3';
 
 
-export default class Job {
+function arrayEquals(a, b) {
+  return !(a < b || a > b);
+}
+
+export default class Job extends EventEmitter {
 
   /**
    *  @param {String} script              Script filename or function.
@@ -11,12 +15,11 @@ export default class Job {
    *  @param {Object[]} [transferBuffers] Optional. Array of buffers to be transferred to the worker context.
    */
   constructor(script, param, transferBuffers) {
+    super();
+
     this.param = param;
     this.transferBuffers = transferBuffers;
     this.importScripts = [];
-    this.callbacksStart = [];
-    this.callbacksDone = [];
-    this.callbacksError = [];
 
     if (typeof script === 'function') {
       var funcStr = script.toString();
@@ -69,21 +72,9 @@ export default class Job {
   functionallyEquals(otherJob) {
     return otherJob &&
       (otherJob instanceof Job) &&
-      utils.arrayEquals(otherJob.scriptArgs, this.scriptArgs) &&
+      arrayEquals(otherJob.scriptArgs, this.scriptArgs) &&
       otherJob.body === this.body &&
       otherJob.scriptFile === this.scriptFile;
-  }
-
-  triggerStart() {
-    utils.callListeners(this.callbacksStart, []);
-  }
-
-  triggerDone(result) {
-    utils.callListeners(this.callbacksDone, [result]);
-  }
-
-  triggerError(error) {
-    utils.callListeners(this.callbacksError, [error]);
   }
 
   /**
@@ -92,8 +83,7 @@ export default class Job {
    *    function(result). `result` is the result value/object returned by the thread.
    */
   start(callback) {
-    utils.addListener(this.callbacksStart, callback);
-    return this;
+    return this.on('start', callback);
   }
 
   /**
@@ -102,8 +92,7 @@ export default class Job {
    *    function(result). `result` is the result value/object returned by the thread.
    */
   done(callback) {
-    utils.addListener(this.callbacksDone, callback);
-    return this;
+    return this.on('done', callback);
   }
 
   /**
@@ -112,8 +101,7 @@ export default class Job {
    *    function(error). `error` is an instance of `Error`.
    */
   error(callback) {
-    utils.addListener(this.callbacksError, callback);
-    return this;
+    return this.on('error', callback);
   }
 
 }

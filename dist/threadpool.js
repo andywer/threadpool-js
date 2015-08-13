@@ -37,15 +37,24 @@ Object.defineProperty(exports, '__esModule', {
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-var _utils = require('./utils');
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var utils = _interopRequireWildcard(_utils);
+var _eventemitter3 = require('eventemitter3');
 
-var Job = (function () {
+var _eventemitter32 = _interopRequireDefault(_eventemitter3);
+
+function arrayEquals(a, b) {
+  return !(a < b || a > b);
+}
+
+var Job = (function (_EventEmitter) {
+  _inherits(Job, _EventEmitter);
 
   /**
    *  @param {String} script              Script filename or function.
@@ -56,12 +65,11 @@ var Job = (function () {
   function Job(script, param, transferBuffers) {
     _classCallCheck(this, Job);
 
+    _get(Object.getPrototypeOf(Job.prototype), 'constructor', this).call(this);
+
     this.param = param;
     this.transferBuffers = transferBuffers;
     this.importScripts = [];
-    this.callbacksStart = [];
-    this.callbacksDone = [];
-    this.callbacksError = [];
 
     if (typeof script === 'function') {
       var funcStr = script.toString();
@@ -123,22 +131,7 @@ var Job = (function () {
   }, {
     key: 'functionallyEquals',
     value: function functionallyEquals(otherJob) {
-      return otherJob && otherJob instanceof Job && utils.arrayEquals(otherJob.scriptArgs, this.scriptArgs) && otherJob.body === this.body && otherJob.scriptFile === this.scriptFile;
-    }
-  }, {
-    key: 'triggerStart',
-    value: function triggerStart() {
-      utils.callListeners(this.callbacksStart, []);
-    }
-  }, {
-    key: 'triggerDone',
-    value: function triggerDone(result) {
-      utils.callListeners(this.callbacksDone, [result]);
-    }
-  }, {
-    key: 'triggerError',
-    value: function triggerError(error) {
-      utils.callListeners(this.callbacksError, [error]);
+      return otherJob && otherJob instanceof Job && arrayEquals(otherJob.scriptArgs, this.scriptArgs) && otherJob.body === this.body && otherJob.scriptFile === this.scriptFile;
     }
 
     /**
@@ -149,8 +142,7 @@ var Job = (function () {
   }, {
     key: 'start',
     value: function start(callback) {
-      utils.addListener(this.callbacksStart, callback);
-      return this;
+      return this.on('start', callback);
     }
 
     /**
@@ -161,8 +153,7 @@ var Job = (function () {
   }, {
     key: 'done',
     value: function done(callback) {
-      utils.addListener(this.callbacksDone, callback);
-      return this;
+      return this.on('done', callback);
     }
 
     /**
@@ -173,17 +164,16 @@ var Job = (function () {
   }, {
     key: 'error',
     value: function error(callback) {
-      utils.addListener(this.callbacksError, callback);
-      return this;
+      return this.on('error', callback);
     }
   }]);
 
   return Job;
-})();
+})(_eventemitter32['default']);
 
 exports['default'] = Job;
 module.exports = exports['default'];
-},{"./utils":5}],3:[function(require,module,exports){
+},{"eventemitter3":6}],3:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -238,7 +228,7 @@ var Thread = (function () {
         }
       }
 
-      job.triggerStart();
+      job.emit('start');
 
       if (job.getScriptFile()) {
 
@@ -296,15 +286,15 @@ var Thread = (function () {
   }, {
     key: 'handleSuccess',
     value: function handleSuccess(job, event) {
-      this.currentJob.triggerDone(event.data);
-      this.threadPool.triggerDone(event.data);
+      this.currentJob.emit('done', event.data);
+      this.threadPool.emit('done', event.data);
       this.handleCompletion(job);
     }
   }, {
     key: 'handleError',
     value: function handleError(job, errorEvent) {
-      this.currentJob.triggerError(errorEvent);
-      this.threadPool.triggerError(errorEvent);
+      this.currentJob.emit('error', errorEvent);
+      this.threadPool.emit('error', errorEvent);
       this.handleCompletion(job);
     }
   }]);
@@ -314,7 +304,7 @@ var Thread = (function () {
 
 exports['default'] = Thread;
 module.exports = exports['default'];
-},{"./../genericWorker":6}],4:[function(require,module,exports){
+},{"./../genericWorker":5}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -323,11 +313,17 @@ Object.defineProperty(exports, '__esModule', {
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var _eventemitter3 = require('eventemitter3');
+
+var _eventemitter32 = _interopRequireDefault(_eventemitter3);
 
 var _Job = require('./Job');
 
@@ -337,11 +333,12 @@ var _Thread = require('./Thread');
 
 var _Thread2 = _interopRequireDefault(_Thread);
 
-var _utils = require('./utils');
+function runDeferred(callback) {
+  setTimeout(callback, 0);
+}
 
-var utils = _interopRequireWildcard(_utils);
-
-var ThreadPool = (function () {
+var ThreadPool = (function (_EventEmitter) {
+  _inherits(ThreadPool, _EventEmitter);
 
   /**
    *  @param {int} [size]       Optional. Number of threads. Default is `ThreadPool.defaultSize`.
@@ -351,6 +348,8 @@ var ThreadPool = (function () {
   function ThreadPool(size, evalScriptUrl) {
     _classCallCheck(this, ThreadPool);
 
+    _get(Object.getPrototypeOf(ThreadPool.prototype), 'constructor', this).call(this);
+
     size = size || ThreadPool.defaultSize;
     evalScriptUrl = evalScriptUrl || '';
 
@@ -359,10 +358,6 @@ var ThreadPool = (function () {
     this.pendingJobs = [];
     this.idleThreads = [];
     this.activeThreads = [];
-
-    this.callbacksDone = [];
-    this.callbacksError = [];
-    this.callbacksAllDone = [];
 
     for (var i = 0; i < size; i++) {
       this.idleThreads.push(new _Thread2['default'](this));
@@ -454,7 +449,7 @@ var ThreadPool = (function () {
       // Run job:
 
       this.pendingJobs.push(job);
-      utils.runDeferred(this.runJobs.bind(this));
+      runDeferred(this.runJobs.bind(this));
 
       return job;
     }
@@ -477,26 +472,15 @@ var ThreadPool = (function () {
       this.runJobs();
     }
   }, {
-    key: 'triggerDone',
-    value: function triggerDone(result) {
-      utils.callListeners(this.callbacksDone, [result]);
-    }
-  }, {
-    key: 'triggerError',
-    value: function triggerError(error) {
-      utils.callListeners(this.callbacksError, [error]);
-    }
-  }, {
     key: 'clearDone',
     value: function clearDone() {
-      this.callbacksDone = [];
+      this.removeAllListeners('done');
     }
   }, {
     key: 'jobIsDone',
     value: function jobIsDone() {
       if (this.pendingJobs.length === 0) {
-        utils.callListeners(this.callbacksAllDone, []);
-        this.callbacksAllDone = [];
+        this.emit('allDone');
       }
     }
 
@@ -504,67 +488,29 @@ var ThreadPool = (function () {
   }, {
     key: 'done',
     value: function done(callback) {
-      utils.addListener(this.callbacksDone, callback);
-      return this;
+      return this.on('done', callback);
     }
 
     /** @see Job.error() */
   }, {
     key: 'error',
     value: function error(callback) {
-      utils.addListener(this.callbacksError, callback);
-      return this;
+      return this.on('error', callback);
     }
   }, {
     key: 'allDone',
     value: function allDone(callback) {
-      utils.addListener(this.callbacksAllDone, callback);
-      return this;
+      return this.once('allDone', callback);
     }
   }]);
 
   return ThreadPool;
-})();
+})(_eventemitter32['default']);
 
 exports['default'] = ThreadPool;
 ThreadPool.defaultSize = 8;
 module.exports = exports['default'];
-},{"./Job":2,"./Thread":3,"./utils":5}],5:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-  value: true
-});
-exports.arrayEquals = arrayEquals;
-exports.addListener = addListener;
-exports.callListeners = callListeners;
-exports.runDeferred = runDeferred;
-
-function arrayEquals(a, b) {
-  return !(a < b || a > b);
-}
-
-function addListener(callbacksArray, callback) {
-  if (typeof callback !== 'function') {
-    throw new Error('Expected callback function as parameter.');
-  }
-
-  // Check that this callbacks has not yet been registered
-  if (callbacksArray.indexOf(callback) === -1) {
-    callbacksArray.push(callback);
-  }
-}
-
-function callListeners(callbacksArray, params) {
-  callbacksArray.forEach(function (callback) {
-    callback.apply(null, params);
-  });
-}
-
-function runDeferred(callback) {
-  setTimeout(callback, 0);
-}
-},{}],6:[function(require,module,exports){
+},{"./Job":2,"./Thread":3,"eventemitter3":6}],5:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable */
@@ -601,4 +547,268 @@ exports['default'] = {
   genericWorkerCode: genericWorkerCode
 };
 module.exports = exports['default'];
+},{}],6:[function(require,module,exports){
+'use strict';
+
+//
+// We store our EE objects in a plain object whose properties are event names.
+// If `Object.create(null)` is not supported we prefix the event names with a
+// `~` to make sure that the built-in object properties are not overridden or
+// used as an attack vector.
+// We also assume that `Object.create(null)` is available when the event name
+// is an ES6 Symbol.
+//
+var prefix = typeof Object.create !== 'function' ? '~' : false;
+
+/**
+ * Representation of a single EventEmitter function.
+ *
+ * @param {Function} fn Event handler to be called.
+ * @param {Mixed} context Context for function execution.
+ * @param {Boolean} once Only emit once
+ * @api private
+ */
+function EE(fn, context, once) {
+  this.fn = fn;
+  this.context = context;
+  this.once = once || false;
+}
+
+/**
+ * Minimal EventEmitter interface that is molded against the Node.js
+ * EventEmitter interface.
+ *
+ * @constructor
+ * @api public
+ */
+function EventEmitter() { /* Nothing to set */ }
+
+/**
+ * Holds the assigned EventEmitters by name.
+ *
+ * @type {Object}
+ * @private
+ */
+EventEmitter.prototype._events = undefined;
+
+/**
+ * Return a list of assigned event listeners.
+ *
+ * @param {String} event The events that should be listed.
+ * @param {Boolean} exists We only need to know if there are listeners.
+ * @returns {Array|Boolean}
+ * @api public
+ */
+EventEmitter.prototype.listeners = function listeners(event, exists) {
+  var evt = prefix ? prefix + event : event
+    , available = this._events && this._events[evt];
+
+  if (exists) return !!available;
+  if (!available) return [];
+  if (available.fn) return [available.fn];
+
+  for (var i = 0, l = available.length, ee = new Array(l); i < l; i++) {
+    ee[i] = available[i].fn;
+  }
+
+  return ee;
+};
+
+/**
+ * Emit an event to all registered event listeners.
+ *
+ * @param {String} event The name of the event.
+ * @returns {Boolean} Indication if we've emitted an event.
+ * @api public
+ */
+EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+  var evt = prefix ? prefix + event : event;
+
+  if (!this._events || !this._events[evt]) return false;
+
+  var listeners = this._events[evt]
+    , len = arguments.length
+    , args
+    , i;
+
+  if ('function' === typeof listeners.fn) {
+    if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
+
+    switch (len) {
+      case 1: return listeners.fn.call(listeners.context), true;
+      case 2: return listeners.fn.call(listeners.context, a1), true;
+      case 3: return listeners.fn.call(listeners.context, a1, a2), true;
+      case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
+      case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
+      case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
+    }
+
+    for (i = 1, args = new Array(len -1); i < len; i++) {
+      args[i - 1] = arguments[i];
+    }
+
+    listeners.fn.apply(listeners.context, args);
+  } else {
+    var length = listeners.length
+      , j;
+
+    for (i = 0; i < length; i++) {
+      if (listeners[i].once) this.removeListener(event, listeners[i].fn, undefined, true);
+
+      switch (len) {
+        case 1: listeners[i].fn.call(listeners[i].context); break;
+        case 2: listeners[i].fn.call(listeners[i].context, a1); break;
+        case 3: listeners[i].fn.call(listeners[i].context, a1, a2); break;
+        default:
+          if (!args) for (j = 1, args = new Array(len -1); j < len; j++) {
+            args[j - 1] = arguments[j];
+          }
+
+          listeners[i].fn.apply(listeners[i].context, args);
+      }
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Register a new EventListener for the given event.
+ *
+ * @param {String} event Name of the event.
+ * @param {Functon} fn Callback function.
+ * @param {Mixed} context The context of the function.
+ * @api public
+ */
+EventEmitter.prototype.on = function on(event, fn, context) {
+  var listener = new EE(fn, context || this)
+    , evt = prefix ? prefix + event : event;
+
+  if (!this._events) this._events = prefix ? {} : Object.create(null);
+  if (!this._events[evt]) this._events[evt] = listener;
+  else {
+    if (!this._events[evt].fn) this._events[evt].push(listener);
+    else this._events[evt] = [
+      this._events[evt], listener
+    ];
+  }
+
+  return this;
+};
+
+/**
+ * Add an EventListener that's only called once.
+ *
+ * @param {String} event Name of the event.
+ * @param {Function} fn Callback function.
+ * @param {Mixed} context The context of the function.
+ * @api public
+ */
+EventEmitter.prototype.once = function once(event, fn, context) {
+  var listener = new EE(fn, context || this, true)
+    , evt = prefix ? prefix + event : event;
+
+  if (!this._events) this._events = prefix ? {} : Object.create(null);
+  if (!this._events[evt]) this._events[evt] = listener;
+  else {
+    if (!this._events[evt].fn) this._events[evt].push(listener);
+    else this._events[evt] = [
+      this._events[evt], listener
+    ];
+  }
+
+  return this;
+};
+
+/**
+ * Remove event listeners.
+ *
+ * @param {String} event The event we want to remove.
+ * @param {Function} fn The listener that we need to find.
+ * @param {Mixed} context Only remove listeners matching this context.
+ * @param {Boolean} once Only remove once listeners.
+ * @api public
+ */
+EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
+  var evt = prefix ? prefix + event : event;
+
+  if (!this._events || !this._events[evt]) return this;
+
+  var listeners = this._events[evt]
+    , events = [];
+
+  if (fn) {
+    if (listeners.fn) {
+      if (
+           listeners.fn !== fn
+        || (once && !listeners.once)
+        || (context && listeners.context !== context)
+      ) {
+        events.push(listeners);
+      }
+    } else {
+      for (var i = 0, length = listeners.length; i < length; i++) {
+        if (
+             listeners[i].fn !== fn
+          || (once && !listeners[i].once)
+          || (context && listeners[i].context !== context)
+        ) {
+          events.push(listeners[i]);
+        }
+      }
+    }
+  }
+
+  //
+  // Reset the array, or remove it completely if we have no more listeners.
+  //
+  if (events.length) {
+    this._events[evt] = events.length === 1 ? events[0] : events;
+  } else {
+    delete this._events[evt];
+  }
+
+  return this;
+};
+
+/**
+ * Remove all listeners or only the listeners for the specified event.
+ *
+ * @param {String} event The event want to remove all listeners for.
+ * @api public
+ */
+EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
+  if (!this._events) return this;
+
+  if (event) delete this._events[prefix ? prefix + event : event];
+  else this._events = prefix ? {} : Object.create(null);
+
+  return this;
+};
+
+//
+// Alias methods names because people roll like that.
+//
+EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
+EventEmitter.prototype.addListener = EventEmitter.prototype.on;
+
+//
+// This function doesn't apply anymore.
+//
+EventEmitter.prototype.setMaxListeners = function setMaxListeners() {
+  return this;
+};
+
+//
+// Expose the prefix.
+//
+EventEmitter.prefixed = prefix;
+
+//
+// Expose the module.
+//
+if ('undefined' !== typeof module) {
+  module.exports = EventEmitter;
+}
+
 },{}]},{},[1]);

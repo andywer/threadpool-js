@@ -38,7 +38,7 @@ export default class Thread {
       }
     }
 
-    job.triggerStart();
+    job.emit('start');
 
     if (job.getScriptFile()) {
 
@@ -96,14 +96,14 @@ export default class Thread {
   }
 
   handleSuccess(job, event) {
-    this.currentJob.triggerDone(event.data);
-    this.threadPool.triggerDone(event.data);
+    this.currentJob.emit('done', event.data);
+    this.threadPool.emit('done', event.data);
     this.handleCompletion(job);
   }
 
   handleError(job, errorEvent) {
-    this.currentJob.triggerError(errorEvent);
-    this.threadPool.triggerError(errorEvent);
+    this.currentJob.emit('error', errorEvent);
+    this.threadPool.emit('error', errorEvent);
     this.handleCompletion(job);
   }
 
