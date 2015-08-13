@@ -224,50 +224,27 @@ var Thread = (function () {
   }, {
     key: 'run',
     value: function run(job) {
-      var self = this;
       var needToInitWorker = true;
-      var transferBuffers = job.getBuffersToTransfer();
+      var transferBuffers = job.getBuffersToTransfer() || [];
 
       this.currentJob = job;
-
-      if (!transferBuffers) {
-        transferBuffers = [];
-      }
-
-      function complete() {
-        self.currentJob = undefined;
-        self.lastJob = job;
-        self.threadPool.onThreadDone(self);
-      }
-
-      function success(event) {
-        self.currentJob.triggerDone(event.data);
-        self.threadPool.triggerDone(event.data);
-        complete();
-      }
-
-      function error(errorEvent) {
-        self.currentJob.triggerError(errorEvent);
-        self.threadPool.triggerError(errorEvent);
-        complete();
-      }
 
       if (this.worker) {
         if (this.lastJob && this.lastJob.functionallyEquals(job)) {
           needToInitWorker = false;
         } else {
           this.worker.terminate();
-          this.worker = undefined;
+          this.worker = null;
         }
       }
 
       job.triggerStart();
 
       if (job.getScriptFile()) {
+
         if (needToInitWorker) {
           this.worker = new Worker(job.getScriptFile());
-          this.worker.addEventListener('message', success, false);
-          this.worker.addEventListener('error', error, false);
+          this.wireEventListeners(job);
         }
 
         this.worker.postMessage(job.getParameter(), transferBuffers);
@@ -293,8 +270,7 @@ var Thread = (function () {
               throw err;
             }
           }
-          this.worker.addEventListener('message', success, false);
-          this.worker.addEventListener('error', error, false);
+          this.wireEventListeners(job);
         }
 
         this.worker.postMessage({
@@ -303,6 +279,33 @@ var Thread = (function () {
           'parameter': job.getParameter()
         }, transferBuffers);
       }
+    }
+  }, {
+    key: 'wireEventListeners',
+    value: function wireEventListeners(job) {
+      this.worker.addEventListener('message', this.handleSuccess.bind(this, job), false);
+      this.worker.addEventListener('error', this.handleError.bind(this, job), false);
+    }
+  }, {
+    key: 'handleCompletion',
+    value: function handleCompletion(job) {
+      this.currentJob = undefined;
+      this.lastJob = job;
+      this.threadPool.onThreadDone(this);
+    }
+  }, {
+    key: 'handleSuccess',
+    value: function handleSuccess(job, event) {
+      this.currentJob.triggerDone(event.data);
+      this.threadPool.triggerDone(event.data);
+      this.handleCompletion(job);
+    }
+  }, {
+    key: 'handleError',
+    value: function handleError(job, errorEvent) {
+      this.currentJob.triggerError(errorEvent);
+      this.threadPool.triggerError(errorEvent);
+      this.handleCompletion(job);
     }
   }]);
 
@@ -576,6 +579,9 @@ function runDeferred(callback) {
 'use strict';
 
 /*eslint-disable */
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
 var genericWorkerCode = 'this.onmessage = function (event) {' + '  var fnData = event.data.function;' + '  var scripts = event.data.importScripts;' + '  var fn = Function.apply(null, fnData.args.concat(fnData.body));' + '  if (importScripts && scripts.length > 0) {' + '    importScripts.apply(null, scripts);' + '  }' + '  fn(event.data.parameter, function(result) {' + '    postMessage(result);' + '  });' + '}';
 /*eslint-enable */
 
@@ -601,8 +607,9 @@ if (typeof BlobBuilder === 'function' && typeof createBlobURL === 'function') {
   genericWorkerDataUri = createBlobURL(blob);
 }
 
-module.exports = {
+exports['default'] = {
   dataUri: genericWorkerDataUri,
   genericWorkerCode: genericWorkerCode
 };
+module.exports = exports['default'];
 },{}]},{},[1]);
