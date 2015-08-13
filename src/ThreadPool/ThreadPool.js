@@ -10,7 +10,7 @@ export default class ThreadPool {
 
   /**
    *  @param {int} [size]       Optional. Number of threads. Default is `ThreadPool.defaultSize`.
-   *  @param {string} [evalScriptUrl] Optional. URL to `evalWorker[.min].js` script (for IE compatibility).
+   *  @param {String} [evalScriptUrl] Optional. URL to `evalWorker[.min].js` script (for IE compatibility).
    */
   constructor(size, evalScriptUrl) {
     size = size || ThreadPool.defaultSize;
@@ -27,37 +27,31 @@ export default class ThreadPool {
     this.callbacksAllDone = [];
 
     for (var i = 0; i < size; i++) {
-      this.idleThreads.push( new Thread(this) );
+      this.idleThreads.push(new Thread(this));
     }
   }
 
   terminateAll() {
-    for (var i = 0; i < this.idleThreads.length; i++) {
-      this.idleThreads[i].terminate();
-    }
+    var allThreads = this.idleThreads.concat(this.activeThreads);
 
-    for (i = 0; i < this.activeThreads.length; i++) {
-      if (this.activeThreads[i]) {
-        this.activeThreads[i].terminate();
-      }
-    }
+    allThreads.forEach(thread => {
+      thread.terminate();
+    });
   }
 
   /**
-   *  Usage: run ({string} WorkerScript [, {object|scalar} Parameter[, {object[]} BuffersToTransfer]] [, {function} doneCallback(returnValue)])
+   *  Usage: run ({String} WorkerScript [, {Object|scalar} Parameter[, {Object[]} BuffersToTransfer]] [, {Function} doneCallback(returnValue)])
    *         - or -
-   *         run ([{string[]} ImportScripts, ] {function} WorkerFunction(param, doneCB) [, {object|scalar} Parameter[, {objects[]} BuffersToTransfer]] [, {function} DoneCallback(result)])
+   *         run ([{String[]} ImportScripts, ] {Function} WorkerFunction(param, doneCB) [, {Object|scalar} Parameter[, {Object[]} BuffersToTransfer]] [, {Function} DoneCallback(result)])
    */
-  run() {
-    var self = this;
-
+  run(...args) {
     ////////////////////
     // Parse arguments:
 
-    var args = [].slice.call(arguments);  // convert `arguments` to a fully functional array `args`
     var workerScript, workerFunction, importScripts, parameter, transferBuffers, doneCb;
+    var job;
 
-    if (arguments.length < 1) {
+    if (args.length < 1) {
       throw new Error('run(): Too few parameters.');
     }
 
@@ -92,7 +86,6 @@ export default class ThreadPool {
     ///////////////
     // Create job:
 
-    var job;
     if (workerScript) {
       job = new Job(workerScript, parameter, transferBuffers);
     } else {
@@ -102,7 +95,7 @@ export default class ThreadPool {
       }
     }
 
-    job.done(function () { self.jobIsDone(job); });
+    job.done(this.jobIsDone.bind(this, job));
 
     if (doneCb) {
       job.done(doneCb);
@@ -112,7 +105,6 @@ export default class ThreadPool {
     // Run job:
 
     this.pendingJobs.push(job);
-
     utils.runDeferred(this.runJobs.bind(this));
 
     return job;
@@ -122,6 +114,7 @@ export default class ThreadPool {
     if (this.idleThreads.length > 0 && this.pendingJobs.length > 0) {
       var thread = this.idleThreads.shift();
       this.activeThreads.push(thread);
+
       var job = this.pendingJobs.shift();
       thread.run(job);
     }
@@ -151,12 +144,12 @@ export default class ThreadPool {
     }
   }
 
-  /// @see Job.done()
+  /** @see Job.done() */
   done(callback) {
     utils.addListener(this.callbacksDone, callback);
     return this;
   }
-  /// @see Job.error()
+  /** @see Job.error() */
   error(callback) {
     utils.addListener(this.callbacksError, callback);
     return this;

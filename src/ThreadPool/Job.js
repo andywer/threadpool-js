@@ -6,9 +6,9 @@ import * as utils from './utils';
 export default class Job {
 
   /**
-   *  @param {string} script Script filename or function.
-   *  @param {object|array} [param] Optional. Parameter (or array of parameters) to be passed to the thread or false/undefined.
-   *  @param {object[]} [transferBuffers] Optional. Array of buffers to be transferred to the worker context.
+   *  @param {String} script              Script filename or function.
+   *  @param {Object|Array} [param]       Optional. Parameter (or array of parameters) to be passed to the thread or false/undefined.
+   *  @param {Object[]} [transferBuffers] Optional. Array of buffers to be transferred to the worker context.
    */
   constructor(script, param, transferBuffers) {
     this.param = param;
@@ -22,10 +22,10 @@ export default class Job {
       var funcStr = script.toString();
       this.scriptArgs = funcStr.substring(funcStr.indexOf('(') + 1, funcStr.indexOf(')')).split(',');
       this.scriptBody = funcStr.substring(funcStr.indexOf('{') + 1, funcStr.lastIndexOf('}'));
-      this.scriptFile = undefined;
+      this.scriptFile = null;
     } else {
-      this.scriptArgs = undefined;
-      this.scriptBody = undefined;
+      this.scriptArgs = null;
+      this.scriptBody = null;
       this.scriptFile = script;
     }
   }
@@ -47,13 +47,13 @@ export default class Job {
   }
 
   /**
-   *  @return {object} Object: { args: ["argument name", ...], body: "<code>" }
+   *  @return {Object} Object: { args: ["argument name", ...], body: "<code>" }
    *      Usage:  var f = Function.apply(null, args.concat(body));
    *          (`Function.apply()` replaces `new Function()`)
    */
   getFunction() {
     if (!this.scriptArgs) {
-      return undefined;
+      return null;
     }
 
     return {
@@ -67,7 +67,8 @@ export default class Job {
 
   /// @return True if `otherJob` uses the same function / same script as this job.
   functionallyEquals(otherJob) {
-    return otherJob && (otherJob instanceof Job) &&
+    return otherJob &&
+      (otherJob instanceof Job) &&
       utils.arrayEquals(otherJob.scriptArgs, this.scriptArgs) &&
       otherJob.body === this.body &&
       otherJob.scriptFile === this.scriptFile;
@@ -87,7 +88,7 @@ export default class Job {
 
   /**
    *  Adds a callback function that is called when the job is about to start.
-   *  @param {function} callback
+   *  @param {Function} callback
    *    function(result). `result` is the result value/object returned by the thread.
    */
   start(callback) {
@@ -97,7 +98,7 @@ export default class Job {
 
   /**
    *  Adds a callback function that is called when the job has been (successfully) finished.
-   *  @param {function} callback
+   *  @param {Function} callback
    *    function(result). `result` is the result value/object returned by the thread.
    */
   done(callback) {
@@ -107,7 +108,7 @@ export default class Job {
 
   /**
    *  Adds a callback function that is called if the job fails.
-   *  @param {function} callback
+   *  @param {Function} callback
    *    function(error). `error` is an instance of `Error`.
    */
   error(callback) {

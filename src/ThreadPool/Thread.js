@@ -10,15 +10,15 @@ export default class Thread {
 
   constructor(threadPool) {
     this.threadPool = threadPool;
-    this.worker     = undefined;
-    this.currentJob = undefined;
-    this.lastJob    = undefined;
+    this.worker     = null;
+    this.currentJob = null;
+    this.lastJob    = null;
   }
 
   terminate() {
     if (this.worker) {
       this.worker.terminate();
-      this.worker = undefined;
+      this.worker = null;
     }
   }
 
@@ -90,8 +90,8 @@ export default class Thread {
   }
 
   handleCompletion(job) {
-    this.currentJob = undefined;
-    this.lastJob  = job;
+    this.currentJob = null;
+    this.lastJob    = job;
     this.threadPool.onThreadDone(this);
   }
 

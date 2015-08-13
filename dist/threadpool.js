@@ -48,9 +48,9 @@ var utils = _interopRequireWildcard(_utils);
 var Job = (function () {
 
   /**
-   *  @param {string} script Script filename or function.
-   *  @param {object|array} [param] Optional. Parameter (or array of parameters) to be passed to the thread or false/undefined.
-   *  @param {object[]} [transferBuffers] Optional. Array of buffers to be transferred to the worker context.
+   *  @param {String} script              Script filename or function.
+   *  @param {Object|Array} [param]       Optional. Parameter (or array of parameters) to be passed to the thread or false/undefined.
+   *  @param {Object[]} [transferBuffers] Optional. Array of buffers to be transferred to the worker context.
    */
 
   function Job(script, param, transferBuffers) {
@@ -67,10 +67,10 @@ var Job = (function () {
       var funcStr = script.toString();
       this.scriptArgs = funcStr.substring(funcStr.indexOf('(') + 1, funcStr.indexOf(')')).split(',');
       this.scriptBody = funcStr.substring(funcStr.indexOf('{') + 1, funcStr.lastIndexOf('}'));
-      this.scriptFile = undefined;
+      this.scriptFile = null;
     } else {
-      this.scriptArgs = undefined;
-      this.scriptBody = undefined;
+      this.scriptArgs = null;
+      this.scriptBody = null;
       this.scriptFile = script;
     }
   }
@@ -97,7 +97,7 @@ var Job = (function () {
     }
 
     /**
-     *  @return {object} Object: { args: ["argument name", ...], body: "<code>" }
+     *  @return {Object} Object: { args: ["argument name", ...], body: "<code>" }
      *      Usage:  var f = Function.apply(null, args.concat(body));
      *          (`Function.apply()` replaces `new Function()`)
      */
@@ -105,7 +105,7 @@ var Job = (function () {
     key: 'getFunction',
     value: function getFunction() {
       if (!this.scriptArgs) {
-        return undefined;
+        return null;
       }
 
       return {
@@ -143,7 +143,7 @@ var Job = (function () {
 
     /**
      *  Adds a callback function that is called when the job is about to start.
-     *  @param {function} callback
+     *  @param {Function} callback
      *    function(result). `result` is the result value/object returned by the thread.
      */
   }, {
@@ -155,7 +155,7 @@ var Job = (function () {
 
     /**
      *  Adds a callback function that is called when the job has been (successfully) finished.
-     *  @param {function} callback
+     *  @param {Function} callback
      *    function(result). `result` is the result value/object returned by the thread.
      */
   }, {
@@ -167,7 +167,7 @@ var Job = (function () {
 
     /**
      *  Adds a callback function that is called if the job fails.
-     *  @param {function} callback
+     *  @param {Function} callback
      *    function(error). `error` is an instance of `Error`.
      */
   }, {
@@ -208,9 +208,9 @@ var Thread = (function () {
     _classCallCheck(this, Thread);
 
     this.threadPool = threadPool;
-    this.worker = undefined;
-    this.currentJob = undefined;
-    this.lastJob = undefined;
+    this.worker = null;
+    this.currentJob = null;
+    this.lastJob = null;
   }
 
   _createClass(Thread, [{
@@ -218,7 +218,7 @@ var Thread = (function () {
     value: function terminate() {
       if (this.worker) {
         this.worker.terminate();
-        this.worker = undefined;
+        this.worker = null;
       }
     }
   }, {
@@ -289,7 +289,7 @@ var Thread = (function () {
   }, {
     key: 'handleCompletion',
     value: function handleCompletion(job) {
-      this.currentJob = undefined;
+      this.currentJob = null;
       this.lastJob = job;
       this.threadPool.onThreadDone(this);
     }
@@ -345,7 +345,7 @@ var ThreadPool = (function () {
 
   /**
    *  @param {int} [size]       Optional. Number of threads. Default is `ThreadPool.defaultSize`.
-   *  @param {string} [evalScriptUrl] Optional. URL to `evalWorker[.min].js` script (for IE compatibility).
+   *  @param {String} [evalScriptUrl] Optional. URL to `evalWorker[.min].js` script (for IE compatibility).
    */
 
   function ThreadPool(size, evalScriptUrl) {
@@ -375,34 +375,32 @@ var ThreadPool = (function () {
   _createClass(ThreadPool, [{
     key: 'terminateAll',
     value: function terminateAll() {
-      for (var i = 0; i < this.idleThreads.length; i++) {
-        this.idleThreads[i].terminate();
-      }
+      var allThreads = this.idleThreads.concat(this.activeThreads);
 
-      for (i = 0; i < this.activeThreads.length; i++) {
-        if (this.activeThreads[i]) {
-          this.activeThreads[i].terminate();
-        }
-      }
+      allThreads.forEach(function (thread) {
+        thread.terminate();
+      });
     }
 
     /**
-     *  Usage: run ({string} WorkerScript [, {object|scalar} Parameter[, {object[]} BuffersToTransfer]] [, {function} doneCallback(returnValue)])
+     *  Usage: run ({String} WorkerScript [, {Object|scalar} Parameter[, {Object[]} BuffersToTransfer]] [, {Function} doneCallback(returnValue)])
      *         - or -
-     *         run ([{string[]} ImportScripts, ] {function} WorkerFunction(param, doneCB) [, {object|scalar} Parameter[, {objects[]} BuffersToTransfer]] [, {function} DoneCallback(result)])
+     *         run ([{String[]} ImportScripts, ] {Function} WorkerFunction(param, doneCB) [, {Object|scalar} Parameter[, {Object[]} BuffersToTransfer]] [, {Function} DoneCallback(result)])
      */
   }, {
     key: 'run',
     value: function run() {
-      var self = this;
-
       ////////////////////
       // Parse arguments:
 
-      var args = [].slice.call(arguments); // convert `arguments` to a fully functional array `args`
       var workerScript, workerFunction, importScripts, parameter, transferBuffers, doneCb;
+      var job;
 
-      if (arguments.length < 1) {
+      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      if (args.length < 1) {
         throw new Error('run(): Too few parameters.');
       }
 
@@ -437,7 +435,6 @@ var ThreadPool = (function () {
       ///////////////
       // Create job:
 
-      var job;
       if (workerScript) {
         job = new _Job2['default'](workerScript, parameter, transferBuffers);
       } else {
@@ -447,9 +444,7 @@ var ThreadPool = (function () {
         }
       }
 
-      job.done(function () {
-        self.jobIsDone(job);
-      });
+      job.done(this.jobIsDone.bind(this, job));
 
       if (doneCb) {
         job.done(doneCb);
@@ -459,7 +454,6 @@ var ThreadPool = (function () {
       // Run job:
 
       this.pendingJobs.push(job);
-
       utils.runDeferred(this.runJobs.bind(this));
 
       return job;
@@ -470,6 +464,7 @@ var ThreadPool = (function () {
       if (this.idleThreads.length > 0 && this.pendingJobs.length > 0) {
         var thread = this.idleThreads.shift();
         this.activeThreads.push(thread);
+
         var job = this.pendingJobs.shift();
         thread.run(job);
       }
@@ -505,7 +500,7 @@ var ThreadPool = (function () {
       }
     }
 
-    /// @see Job.done()
+    /** @see Job.done() */
   }, {
     key: 'done',
     value: function done(callback) {
@@ -513,7 +508,7 @@ var ThreadPool = (function () {
       return this;
     }
 
-    /// @see Job.error()
+    /** @see Job.error() */
   }, {
     key: 'error',
     value: function error(callback) {
@@ -554,22 +549,16 @@ function addListener(callbacksArray, callback) {
     throw new Error('Expected callback function as parameter.');
   }
 
-  // Check that this callbacks has not yet been registered:
-  for (var i = 0; i < callbacksArray.length; i++) {
-    var cb = callbacksArray[i];
-    if (cb === callback) {
-      return;
-    }
+  // Check that this callbacks has not yet been registered
+  if (callbacksArray.indexOf(callback) === -1) {
+    callbacksArray.push(callback);
   }
-
-  callbacksArray.push(callback);
 }
 
 function callListeners(callbacksArray, params) {
-  for (var i = 0; i < callbacksArray.length; i++) {
-    var cb = callbacksArray[i];
-    cb.apply(null, params);
-  }
+  callbacksArray.forEach(function (callback) {
+    callback.apply(null, params);
+  });
 }
 
 function runDeferred(callback) {

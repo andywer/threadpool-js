@@ -6,7 +6,8 @@
     "defaultParams"  : true,
     "destructuring"  : true,
     "jsx"            : true,
-    "modules"        : true
+    "modules"        : true,
+    "restParams"     : true
   },
   "env" : {
     "browser" : true,
