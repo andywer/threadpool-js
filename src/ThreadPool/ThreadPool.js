@@ -29,7 +29,10 @@ export default class ThreadPool extends EventEmitter {
     this.activeThreads = [];
 
     for (var i = 0; i < size; i++) {
-      this.idleThreads.push(new Thread(this));
+      let thread = new Thread(this);
+      thread.on('done', this.handleThreadDone.bind(this, thread));
+
+      this.idleThreads.push(thread);
     }
   }
 
@@ -112,6 +115,7 @@ export default class ThreadPool extends EventEmitter {
     return job;
   }
 
+  /** for internal use only */
   runJobs() {
     if (this.idleThreads.length > 0 && this.pendingJobs.length > 0) {
       var thread = this.idleThreads.shift();
@@ -122,6 +126,7 @@ export default class ThreadPool extends EventEmitter {
     }
   }
 
+  /** for internal use only */
   handleThreadDone(thread) {
     this.idleThreads.unshift(thread);
     this.activeThreads.splice(this.activeThreads.indexOf(thread), 1);
@@ -132,18 +137,22 @@ export default class ThreadPool extends EventEmitter {
     }
   }
 
+  /** @deprecated Use .removeAllListeners('done') instead */
   clearDone() {
     this.removeAllListeners('done');
   }
 
-  /** @see Job.done() */
+  /** Shortcut for .on('done', callback) */
   done(callback) {
     return this.on('done', callback);
   }
-  /** @see Job.error() */
+
+  /** Shortcut for .on('error', callback) */
   error(callback) {
     return this.on('error', callback);
   }
+
+  /** Shortcut for .on('allDone', callback) */
   allDone(callback) {
     return this.once('allDone', callback);
   }

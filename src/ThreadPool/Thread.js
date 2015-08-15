@@ -1,10 +1,13 @@
 'use strict';
 
+import EventEmitter from 'eventemitter3';
 import WorkerFactory from './WorkerFactory';
 
-export default class Thread {
+export default class Thread extends EventEmitter {
 
   constructor(threadPool) {
+    super();
+
     this.threadPool = threadPool;
     this.factory    = new WorkerFactory({ evalWorkerUrl : threadPool.evalWorkerUrl });
 
@@ -74,7 +77,8 @@ export default class Thread {
   handleCompletion(job) {
     this.currentJob = null;
     this.lastJob    = job;
-    this.threadPool.handleThreadDone(this, job);
+
+    this.emit('done', job);
   }
 
   handleSuccess(job, event) {
