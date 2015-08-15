@@ -1,15 +1,13 @@
 'use strict';
 
-import genericWorker from './../genericWorker';
-
-var genericWorkerDataUri = genericWorker.dataUri;
-var genericWorkerCode = genericWorker.genericWorkerCode;
-
+import WorkerFactory from './WorkerFactory';
 
 export default class Thread {
 
   constructor(threadPool) {
     this.threadPool = threadPool;
+    this.factory    = new WorkerFactory({ evalWorkerUrl : threadPool.evalWorkerUrl });
+
     this.worker     = null;
     this.currentJob = null;
     this.lastJob    = null;
@@ -27,7 +25,7 @@ export default class Thread {
     var transferBuffers = job.getBuffersToTransfer() || [];
 
     this.currentJob = job;
-
+    this.factory.once('new', worker => { this.wireEventListeners(worker, job); });
 
     if (this.worker) {
       if (this.lastJob && this.lastJob.functionallyEquals(job)) {
@@ -40,59 +38,43 @@ export default class Thread {
 
     job.emit('start');
 
-    if (job.getScriptFile()) {
-
+    try {
       if (needToInitWorker) {
-        this.worker = new Worker(job.getScriptFile());
-        this.wireEventListeners(job);
-      }
-
-      this.worker.postMessage(job.getParameter(), transferBuffers);
-
-    } else {
-
-      if (needToInitWorker) {
-        try {
-          this.worker = new Worker(genericWorkerDataUri);
-        } catch(err) {
-          // make sure it's IE that we failed on
-          var olderIE = window.navigator.userAgent.indexOf('MSIE ') > -1;
-          var newerIE = window.navigator.userAgent.indexOf('Trident/') > -1;
-
-          // Try to create the worker using evalworker.js as the bloburl bug workaround
-          if (olderIE || newerIE) {
-            if (!this.threadPool.evalWorkerUrl) {
-              throw new Error('No eval worker script set (required for IE compatibility).');
-            }
-
-            this.worker = new Worker(this.threadPool.evalWorkerUrl);
-            this.worker.postMessage(genericWorkerCode);
-          } else {
-            throw err;
-          }
+        if (job.getScriptFile()) {
+          this.worker = this.factory.runScriptFile(job.getScriptFile(), job.getParameter(), transferBuffers);
+        } else {
+          this.worker = this.factory.runCode(job.getFunction(), job.getParameter(), job.getImportScripts(), transferBuffers);
         }
-        this.wireEventListeners(job);
+      } else {
+        this.wireEventListeners(this.worker, job, true);
+
+        if (job.getScriptFile()) {
+          this.factory.passParamsToWorkerScript(this.worker, job.getParameter(), transferBuffers);
+        } else {
+          this.factory.passParamsToGenericWorker(this.worker, job.getFunction(), job.getParameter(), job.getImportScripts(), transferBuffers);
+        }
       }
-
-      this.worker.postMessage({
-        'function'      : job.getFunction(),
-        'importScripts' : job.getImportScripts(),
-        'parameter'     : job.getParameter()
-      }, transferBuffers);
-
+    } finally {
+      // always remove all listeners (for this job), so they cannot be triggered when this function is later
+      // called with a different job
+      this.factory.removeAllListeners('new');
     }
   }
 
+  wireEventListeners(worker, job, removeExisting = false) {
+    if (removeExisting) {
+      worker.removeAllListeners('message');
+      worker.removeAllListeners('error');
+    }
 
-  wireEventListeners(job) {
-    this.worker.addEventListener('message', this.handleSuccess.bind(this, job), false);
-    this.worker.addEventListener('error', this.handleError.bind(this, job), false);
+    worker.on('message', this.handleSuccess.bind(this, job));
+    worker.on('error', this.handleError.bind(this, job));
   }
 
   handleCompletion(job) {
     this.currentJob = null;
     this.lastJob    = job;
-    this.threadPool.onThreadDone(this);
+    this.threadPool.handleThreadDone(this, job);
   }
 
   handleSuccess(job, event) {

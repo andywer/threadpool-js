@@ -2,7 +2,6 @@
 
 import EventEmitter from 'eventemitter3';
 
-
 function arrayEquals(a, b) {
   return !(a < b || a > b);
 }
@@ -64,6 +63,7 @@ export default class Job extends EventEmitter {
       body: this.scriptBody
     };
   }
+
   getScriptFile() {
     return this.scriptFile;
   }

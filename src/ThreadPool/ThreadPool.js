@@ -42,9 +42,11 @@ export default class ThreadPool extends EventEmitter {
   }
 
   /**
-   *  Usage: run ({String} WorkerScript [, {Object|scalar} Parameter[, {Object[]} BuffersToTransfer]] [, {Function} doneCallback(returnValue)])
-   *         - or -
-   *         run ([{String[]} ImportScripts, ] {Function} WorkerFunction(param, doneCB) [, {Object|scalar} Parameter[, {Object[]} BuffersToTransfer]] [, {Function} DoneCallback(result)])
+   * Usage: run ({String} WorkerScript [, {Object|scalar} Parameter[, {Object[]} BuffersToTransfer]] [, {Function} doneCallback(returnValue)])
+   *        - or -
+   *        run ([{String[]} ImportScripts, ] {Function} WorkerFunction(param, doneCB) [, {Object|scalar} Parameter[, {Object[]} BuffersToTransfer]] [, {Function} DoneCallback(result)])
+   *
+   * @return Job
    */
   run(...args) {
     ////////////////////
@@ -97,10 +99,8 @@ export default class ThreadPool extends EventEmitter {
       }
     }
 
-    job.done(this.jobIsDone.bind(this, job));
-
     if (doneCb) {
-      job.done(doneCb);
+      job.on('done', doneCb);
     }
 
     ////////////
@@ -122,20 +122,18 @@ export default class ThreadPool extends EventEmitter {
     }
   }
 
-  onThreadDone(thread) {
+  handleThreadDone(thread) {
     this.idleThreads.unshift(thread);
     this.activeThreads.splice(this.activeThreads.indexOf(thread), 1);
     this.runJobs();
+
+    if (this.pendingJobs.length === 0 && this.activeThreads.length === 0) {
+      this.emit('allDone');
+    }
   }
 
   clearDone() {
     this.removeAllListeners('done');
-  }
-
-  jobIsDone() {
-    if (this.pendingJobs.length === 0) {
-      this.emit('allDone');
-    }
   }
 
   /** @see Job.done() */

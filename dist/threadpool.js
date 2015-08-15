@@ -173,7 +173,7 @@ var Job = (function (_EventEmitter) {
 
 exports['default'] = Job;
 module.exports = exports['default'];
-},{"eventemitter3":6}],3:[function(require,module,exports){
+},{"eventemitter3":8}],3:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -186,18 +186,17 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'd
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-var _genericWorker = require('./../genericWorker');
+var _WorkerFactory = require('./WorkerFactory');
 
-var _genericWorker2 = _interopRequireDefault(_genericWorker);
-
-var genericWorkerDataUri = _genericWorker2['default'].dataUri;
-var genericWorkerCode = _genericWorker2['default'].genericWorkerCode;
+var _WorkerFactory2 = _interopRequireDefault(_WorkerFactory);
 
 var Thread = (function () {
   function Thread(threadPool) {
     _classCallCheck(this, Thread);
 
     this.threadPool = threadPool;
+    this.factory = new _WorkerFactory2['default']({ evalWorkerUrl: threadPool.evalWorkerUrl });
+
     this.worker = null;
     this.currentJob = null;
     this.lastJob = null;
@@ -214,10 +213,15 @@ var Thread = (function () {
   }, {
     key: 'run',
     value: function run(job) {
+      var _this = this;
+
       var needToInitWorker = true;
       var transferBuffers = job.getBuffersToTransfer() || [];
 
       this.currentJob = job;
+      this.factory.once('new', function (worker) {
+        _this.wireEventListeners(worker, job);
+      });
 
       if (this.worker) {
         if (this.lastJob && this.lastJob.functionallyEquals(job)) {
@@ -230,58 +234,47 @@ var Thread = (function () {
 
       job.emit('start');
 
-      if (job.getScriptFile()) {
-
+      try {
         if (needToInitWorker) {
-          this.worker = new Worker(job.getScriptFile());
-          this.wireEventListeners(job);
-        }
-
-        this.worker.postMessage(job.getParameter(), transferBuffers);
-      } else {
-
-        if (needToInitWorker) {
-          try {
-            this.worker = new Worker(genericWorkerDataUri);
-          } catch (err) {
-            // make sure it's IE that we failed on
-            var olderIE = window.navigator.userAgent.indexOf('MSIE ') > -1;
-            var newerIE = window.navigator.userAgent.indexOf('Trident/') > -1;
-
-            // Try to create the worker using evalworker.js as the bloburl bug workaround
-            if (olderIE || newerIE) {
-              if (!this.threadPool.evalWorkerUrl) {
-                throw new Error('No eval worker script set (required for IE compatibility).');
-              }
-
-              this.worker = new Worker(this.threadPool.evalWorkerUrl);
-              this.worker.postMessage(genericWorkerCode);
-            } else {
-              throw err;
-            }
+          if (job.getScriptFile()) {
+            this.worker = this.factory.runScriptFile(job.getScriptFile(), job.getParameter(), transferBuffers);
+          } else {
+            this.worker = this.factory.runCode(job.getFunction(), job.getParameter(), job.getImportScripts(), transferBuffers);
           }
-          this.wireEventListeners(job);
-        }
+        } else {
+          this.wireEventListeners(this.worker, job, true);
 
-        this.worker.postMessage({
-          'function': job.getFunction(),
-          'importScripts': job.getImportScripts(),
-          'parameter': job.getParameter()
-        }, transferBuffers);
+          if (job.getScriptFile()) {
+            this.factory.passParamsToWorkerScript(this.worker, job.getParameter(), transferBuffers);
+          } else {
+            this.factory.passParamsToGenericWorker(this.worker, job.getFunction(), job.getParameter(), job.getImportScripts(), transferBuffers);
+          }
+        }
+      } finally {
+        // always remove all listeners (for this job), so they cannot be triggered when this function is later
+        // called with a different job
+        this.factory.removeAllListeners('new');
       }
     }
   }, {
     key: 'wireEventListeners',
-    value: function wireEventListeners(job) {
-      this.worker.addEventListener('message', this.handleSuccess.bind(this, job), false);
-      this.worker.addEventListener('error', this.handleError.bind(this, job), false);
+    value: function wireEventListeners(worker, job) {
+      var removeExisting = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+
+      if (removeExisting) {
+        worker.removeAllListeners('message');
+        worker.removeAllListeners('error');
+      }
+
+      worker.on('message', this.handleSuccess.bind(this, job));
+      worker.on('error', this.handleError.bind(this, job));
     }
   }, {
     key: 'handleCompletion',
     value: function handleCompletion(job) {
       this.currentJob = null;
       this.lastJob = job;
-      this.threadPool.onThreadDone(this);
+      this.threadPool.handleThreadDone(this, job);
     }
   }, {
     key: 'handleSuccess',
@@ -304,7 +297,7 @@ var Thread = (function () {
 
 exports['default'] = Thread;
 module.exports = exports['default'];
-},{"./../genericWorker":5}],4:[function(require,module,exports){
+},{"./WorkerFactory":5}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -378,9 +371,11 @@ var ThreadPool = (function (_EventEmitter) {
     }
 
     /**
-     *  Usage: run ({String} WorkerScript [, {Object|scalar} Parameter[, {Object[]} BuffersToTransfer]] [, {Function} doneCallback(returnValue)])
-     *         - or -
-     *         run ([{String[]} ImportScripts, ] {Function} WorkerFunction(param, doneCB) [, {Object|scalar} Parameter[, {Object[]} BuffersToTransfer]] [, {Function} DoneCallback(result)])
+     * Usage: run ({String} WorkerScript [, {Object|scalar} Parameter[, {Object[]} BuffersToTransfer]] [, {Function} doneCallback(returnValue)])
+     *        - or -
+     *        run ([{String[]} ImportScripts, ] {Function} WorkerFunction(param, doneCB) [, {Object|scalar} Parameter[, {Object[]} BuffersToTransfer]] [, {Function} DoneCallback(result)])
+     *
+     * @return Job
      */
   }, {
     key: 'run',
@@ -439,10 +434,8 @@ var ThreadPool = (function (_EventEmitter) {
         }
       }
 
-      job.done(this.jobIsDone.bind(this, job));
-
       if (doneCb) {
-        job.done(doneCb);
+        job.on('done', doneCb);
       }
 
       ////////////
@@ -465,23 +458,20 @@ var ThreadPool = (function (_EventEmitter) {
       }
     }
   }, {
-    key: 'onThreadDone',
-    value: function onThreadDone(thread) {
+    key: 'handleThreadDone',
+    value: function handleThreadDone(thread) {
       this.idleThreads.unshift(thread);
       this.activeThreads.splice(this.activeThreads.indexOf(thread), 1);
       this.runJobs();
+
+      if (this.pendingJobs.length === 0 && this.activeThreads.length === 0) {
+        this.emit('allDone');
+      }
     }
   }, {
     key: 'clearDone',
     value: function clearDone() {
       this.removeAllListeners('done');
-    }
-  }, {
-    key: 'jobIsDone',
-    value: function jobIsDone() {
-      if (this.pendingJobs.length === 0) {
-        this.emit('allDone');
-      }
     }
 
     /** @see Job.done() */
@@ -510,7 +500,184 @@ var ThreadPool = (function (_EventEmitter) {
 exports['default'] = ThreadPool;
 ThreadPool.defaultSize = 8;
 module.exports = exports['default'];
-},{"./Job":2,"./Thread":3,"eventemitter3":6}],5:[function(require,module,exports){
+},{"./Job":2,"./Thread":3,"eventemitter3":8}],5:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get = function get(_x4, _x5, _x6) { var _again = true; _function: while (_again) { var object = _x4, property = _x5, receiver = _x6; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x4 = parent; _x5 = property; _x6 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var _eventemitter3 = require('eventemitter3');
+
+var _eventemitter32 = _interopRequireDefault(_eventemitter3);
+
+var _WorkerWrapper = require('./WorkerWrapper');
+
+var _WorkerWrapper2 = _interopRequireDefault(_WorkerWrapper);
+
+var _genericWorker = require('./../genericWorker');
+
+var _genericWorker2 = _interopRequireDefault(_genericWorker);
+
+var genericWorkerDataUri = _genericWorker2['default'].dataUri;
+var genericWorkerCode = _genericWorker2['default'].genericWorkerCode;
+
+function runningInIE() {
+  var olderIE = window.navigator.userAgent.indexOf('MSIE ') > -1;
+  var newerIE = window.navigator.userAgent.indexOf('Trident/') > -1;
+
+  return olderIE || newerIE;
+}
+
+var WorkerFactory = (function (_EventEmitter) {
+  _inherits(WorkerFactory, _EventEmitter);
+
+  function WorkerFactory(options) {
+    _classCallCheck(this, WorkerFactory);
+
+    _get(Object.getPrototypeOf(WorkerFactory.prototype), 'constructor', this).call(this);
+
+    this.evalWorkerUrl = options.evalWorkerUrl;
+  }
+
+  _createClass(WorkerFactory, [{
+    key: 'runScriptFile',
+    value: function runScriptFile(url, parameter) {
+      var transferBuffers = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
+
+      var worker = new _WorkerWrapper2['default'](url);
+      this.emit('new', worker);
+
+      this.passParamsToWorkerScript(worker, parameter, transferBuffers);
+
+      return worker;
+    }
+  }, {
+    key: 'runCode',
+    value: function runCode(fn, parameter) {
+      var importScripts = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
+      var transferBuffers = arguments.length <= 3 || arguments[3] === undefined ? [] : arguments[3];
+
+      var worker;
+
+      try {
+        worker = new _WorkerWrapper2['default'](genericWorkerDataUri);
+      } catch (error) {
+        // Try to create the worker using evalworker.js if on IE
+        if (runningInIE()) {
+          if (!this.evalWorkerUrl) {
+            throw new Error('No eval worker script set (required for IE compatibility).');
+          }
+
+          worker = new _WorkerWrapper2['default'](this.evalWorkerUrl);
+
+          // let the worker run the initialization code
+          worker.postMessage(genericWorkerCode);
+        } else {
+          throw error;
+        }
+      }
+
+      this.emit('new', worker);
+
+      this.passParamsToGenericWorker(worker, fn, parameter, importScripts, transferBuffers);
+
+      return worker;
+    }
+  }, {
+    key: 'passParamsToWorkerScript',
+    value: function passParamsToWorkerScript(worker, parameter, transferBuffers) {
+      worker.postMessage(parameter, transferBuffers);
+    }
+  }, {
+    key: 'passParamsToGenericWorker',
+    value: function passParamsToGenericWorker(worker, fn, parameter, importScripts, transferBuffers) {
+      worker.postMessage({
+        'function': fn,
+        'importScripts': importScripts,
+        'parameter': parameter
+      }, transferBuffers);
+    }
+  }]);
+
+  return WorkerFactory;
+})(_eventemitter32['default']);
+
+exports['default'] = WorkerFactory;
+module.exports = exports['default'];
+},{"./../genericWorker":7,"./WorkerWrapper":6,"eventemitter3":8}],6:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var _eventemitter3 = require('eventemitter3');
+
+var _eventemitter32 = _interopRequireDefault(_eventemitter3);
+
+/**
+ * Wrapping the WebWorker in an event emitter
+ * (Because removeAllListeners() is quite a nice feature...)
+ */
+
+var WorkerWrapper = (function (_EventEmitter) {
+  _inherits(WorkerWrapper, _EventEmitter);
+
+  function WorkerWrapper(url) {
+    _classCallCheck(this, WorkerWrapper);
+
+    _get(Object.getPrototypeOf(WorkerWrapper.prototype), 'constructor', this).call(this);
+
+    var worker = new Worker(url);
+    this.worker = worker;
+
+    worker.addEventListener('message', this.emit.bind(this, 'message'));
+    worker.addEventListener('error', this.emit.bind(this, 'error'));
+  }
+
+  _createClass(WorkerWrapper, [{
+    key: 'postMessage',
+    value: function postMessage() {
+      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      this.worker.postMessage.apply(this.worker, args);
+    }
+  }, {
+    key: 'terminate',
+    value: function terminate() {
+      return this.worker.terminate();
+    }
+  }]);
+
+  return WorkerWrapper;
+})(_eventemitter32['default']);
+
+exports['default'] = WorkerWrapper;
+module.exports = exports['default'];
+},{"eventemitter3":8}],7:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable */
@@ -547,7 +714,7 @@ exports['default'] = {
   genericWorkerCode: genericWorkerCode
 };
 module.exports = exports['default'];
-},{}],6:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 'use strict';
 
 //
