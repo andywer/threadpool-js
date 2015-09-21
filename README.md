@@ -1,5 +1,7 @@
 ## threadpool.js [![Build Status](https://travis-ci.org/andywer/threadpool-js.svg?branch=master)](https://travis-ci.org/andywer/threadpool-js) [![npm version](https://badge.fury.io/js/threadpool-js.svg)](http://badge.fury.io/js/threadpool-js) [![Bower version](https://badge.fury.io/bo/threadpool-js.svg)](http://badge.fury.io/bo/threadpool-js)
 
+__Deprecation notice: This package is near its end of life. Switch to [threads.js](https://github.com/andywer/threads.js) instead :)__
+
 _threadpool.js_ is aimed to be a general-purpose multi-threading library for Javascript.
 Its key features are *portability* and *ease of use*. The library can either be used in a stand-alone fashion or as a *[require.js](http://requirejs.org/)* module.
 
