@@ -4,5 +4,16 @@ node_js:
   - "0.12"
   - "4.1"
 
+# Here comes the stuff to make webworker-threads work:
+
 install:
 - CXX="g++-4.8" CC="gcc-4.8" npm install
+
+# thanks to http://stackoverflow.com/a/30925448/1283667:
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.8
+    - g++-4.8
